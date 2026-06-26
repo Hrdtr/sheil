@@ -57,5 +57,8 @@
   "lint-staged": {
     "*": "oxfmt --no-error-on-unmatched-pattern",
     "*.{js,jsx,ts,tsx,mjs,cjs}": "nub run lint"
+  },
+  "engines": {
+    "node": ">=24.17.0"
   }
 }
