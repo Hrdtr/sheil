@@ -88,7 +88,7 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libudev-dev
 
       - name: Build
-        run: nub run tauri build
+        run: nubx tauri build
 
   build-android:
     needs: check
@@ -125,10 +125,10 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libudev-dev
 
       - name: Init Android project
-        run: nub run tauri android init
+        run: nubx tauri android init
 
       - name: Build
-        run: nub run tauri android build
+        run: nubx tauri android build
 
   build-ios:
     needs: check
@@ -151,7 +151,7 @@ jobs:
           workspaces: './tauri -> target'
 
       - name: Init iOS project
-        run: nub run tauri ios init
+        run: nubx tauri ios init
 
       - name: Build
-        run: nub run tauri ios build
+        run: nubx tauri ios build

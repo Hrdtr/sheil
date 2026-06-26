@@ -76,13 +76,13 @@ nub install
 ### Development
 
 ```bash
-nub run tauri dev
+nubx tauri dev
 ```
 
 ### Build
 
 ```bash
-nub run tauri build
+nubx tauri build
 ```
 
 ## Project Structure
