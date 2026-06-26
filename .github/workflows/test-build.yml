@@ -27,7 +27,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: tauri
+          workspaces: './tauri -> target'
 
       - name: Install Linux dependencies
         run: |
@@ -74,12 +74,12 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: tauri
+          workspaces: './tauri -> target'
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
@@ -87,8 +87,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libudev-dev
 
-      - name: Build Tauri
-        run: nub run tauri build -- --target ${{ matrix.target }}
+      - name: Build
+        run: nub run tauri build
 
   build-android:
     needs: check
@@ -108,7 +108,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: tauri
+          workspaces: './tauri -> target'
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -122,12 +122,12 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libudev-dev
 
       - name: Init Android project
         run: nub run tauri android init
 
-      - name: Build Android
+      - name: Build
         run: nub run tauri android build
 
   build-ios:
@@ -148,10 +148,10 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: tauri
+          workspaces: './tauri -> target'
 
       - name: Init iOS project
         run: nub run tauri ios init
 
-      - name: Build iOS
+      - name: Build
         run: nub run tauri ios build

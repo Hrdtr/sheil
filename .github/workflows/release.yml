@@ -43,7 +43,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: tauri
+          workspaces: './tauri -> target'
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-24.04'
@@ -84,7 +84,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: tauri
+          workspaces: './tauri -> target'
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -136,7 +136,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: tauri
+          workspaces: './tauri -> target'
 
       - name: Init iOS project
         run: nub run tauri ios init
