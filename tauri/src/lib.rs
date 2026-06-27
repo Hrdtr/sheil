@@ -1,6 +1,9 @@
 mod commands;
 mod keystore;
-use commands::ssh::{ssh_connect, ssh_disconnect, ssh_import_key, ssh_list_sessions, SshState};
+use commands::ssh::{
+    ssh_close_channel, ssh_connect, ssh_disconnect, ssh_import_key, ssh_list_sessions,
+    ssh_open_channel, ssh_resize, ssh_write, SshState,
+};
 use keystore::{credential_exists, delete_credential, retrieve_credential, store_credential};
 
 #[allow(clippy::missing_panics_doc)]
@@ -32,7 +35,11 @@ pub fn run() {
             ssh_connect,
             ssh_disconnect,
             ssh_import_key,
-            ssh_list_sessions
+            ssh_list_sessions,
+            ssh_open_channel,
+            ssh_write,
+            ssh_resize,
+            ssh_close_channel
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

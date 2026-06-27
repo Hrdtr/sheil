@@ -3,7 +3,16 @@
 	import { WebglAddon } from '@xterm/addon-webgl';
 	import { FitAddon } from '@xterm/addon-fit';
 	import { WebLinksAddon } from '@xterm/addon-web-links';
+	import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 	import { Card, Content, Header, Title } from '$lib/components/ui/card/index';
+	import {
+		sshOpenChannel,
+		sshWrite,
+		sshResize,
+		sshCloseChannel,
+	} from '$lib/commands.svelte';
+
+	let { sessionId }: { sessionId: string | null } = $props();
 
 	let container: HTMLDivElement | undefined = undefined;
 
@@ -66,6 +75,51 @@
 		return () => {
 			resizeObserver?.disconnect();
 			terminal.dispose();
+		};
+	});
+
+	$effect(() => {
+		if (!sessionId) return;
+
+		const cols = terminal.cols;
+		const rows = terminal.rows;
+
+		sshOpenChannel(sessionId, cols, rows).catch((e) => {
+			terminal.writeln(`\r\n\x1b[31mPTY error: ${e}\x1b[0m`);
+		});
+
+		const dataDispose = terminal.onData((data) => {
+			const encoder = new TextEncoder();
+			sshWrite(sessionId, encoder.encode(data)).catch(() => {});
+		});
+
+		const resizeDispose = terminal.onResize(({ cols, rows }) => {
+			sshResize(sessionId, cols, rows).catch(() => {});
+		});
+
+		let unlistenOutput: UnlistenFn | undefined;
+		let unlistenExit: UnlistenFn | undefined;
+
+		listen<{ sessionId: string; data: number[] }>('ssh-output', (event) => {
+			if (event.payload.sessionId !== sessionId) return;
+			terminal.write(new Uint8Array(event.payload.data));
+		}).then((fn) => {
+			unlistenOutput = fn;
+		});
+
+		listen<{ sessionId: string }>('ssh-exit', (event) => {
+			if (event.payload.sessionId !== sessionId) return;
+			terminal.writeln('\r\n\x1b[33m[Connection closed]\x1b[0m');
+		}).then((fn) => {
+			unlistenExit = fn;
+		});
+
+		return () => {
+			dataDispose.dispose();
+			resizeDispose.dispose();
+			unlistenOutput?.();
+			unlistenExit?.();
+			sshCloseChannel(sessionId).catch(() => {});
 		};
 	});
 </script>

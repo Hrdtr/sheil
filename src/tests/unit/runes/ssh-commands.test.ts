@@ -1,5 +1,14 @@
 import type { ImportedKeyInfo, SshAuth } from '$lib/commands.svelte';
-import { sshConnect, sshDisconnect, sshImportKey, sshListSessions } from '$lib/commands.svelte';
+import {
+  sshConnect,
+  sshDisconnect,
+  sshImportKey,
+  sshListSessions,
+  sshOpenChannel,
+  sshWrite,
+  sshResize,
+  sshCloseChannel,
+} from '$lib/commands.svelte';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mockInvoke } from '../../setup';
 
@@ -170,5 +179,119 @@ describe('sshListSessions', () => {
     mockInvoke.mockRejectedValueOnce(new Error('Internal error'));
 
     await expect(sshListSessions()).rejects.toThrow('Internal error');
+  });
+});
+
+describe('sshOpenChannel', () => {
+  it('invokes ssh_open_channel with session ID and dimensions', async () => {
+    mockInvoke.mockResolvedValueOnce(undefined);
+
+    await sshOpenChannel('session-1', 80, 24);
+
+    expect(mockInvoke).toHaveBeenCalledOnce();
+    expect(mockInvoke).toHaveBeenCalledWith('ssh_open_channel', {
+      sessionId: 'session-1',
+      cols: 80,
+      rows: 24,
+    });
+  });
+
+  it('returns void on success', async () => {
+    mockInvoke.mockResolvedValueOnce(undefined);
+
+    const result = await sshOpenChannel('s1', 120, 40);
+
+    expect(result).toBeUndefined();
+  });
+
+  it('propagates invoke errors', async () => {
+    mockInvoke.mockRejectedValueOnce(new Error('Session not found'));
+
+    await expect(sshOpenChannel('ghost', 80, 24)).rejects.toThrow('Session not found');
+  });
+});
+
+describe('sshWrite', () => {
+  it('invokes ssh_write with session ID and data as number array', async () => {
+    mockInvoke.mockResolvedValueOnce(undefined);
+
+    const data = new Uint8Array([0x6c, 0x73, 0x0d]); // "ls\r"
+    await sshWrite('session-1', data);
+
+    expect(mockInvoke).toHaveBeenCalledOnce();
+    expect(mockInvoke).toHaveBeenCalledWith('ssh_write', {
+      sessionId: 'session-1',
+      data: [0x6c, 0x73, 0x0d],
+    });
+  });
+
+  it('returns void on success', async () => {
+    mockInvoke.mockResolvedValueOnce(undefined);
+
+    const result = await sshWrite('s1', new Uint8Array([]));
+
+    expect(result).toBeUndefined();
+  });
+
+  it('propagates invoke errors', async () => {
+    mockInvoke.mockRejectedValueOnce(new Error('Channel not found'));
+
+    await expect(sshWrite('bad', new Uint8Array([0x61]))).rejects.toThrow('Channel not found');
+  });
+});
+
+describe('sshResize', () => {
+  it('invokes ssh_resize with session ID and new dimensions', async () => {
+    mockInvoke.mockResolvedValueOnce(undefined);
+
+    await sshResize('session-1', 132, 43);
+
+    expect(mockInvoke).toHaveBeenCalledOnce();
+    expect(mockInvoke).toHaveBeenCalledWith('ssh_resize', {
+      sessionId: 'session-1',
+      cols: 132,
+      rows: 43,
+    });
+  });
+
+  it('returns void on success', async () => {
+    mockInvoke.mockResolvedValueOnce(undefined);
+
+    const result = await sshResize('s1', 80, 24);
+
+    expect(result).toBeUndefined();
+  });
+
+  it('propagates invoke errors', async () => {
+    mockInvoke.mockRejectedValueOnce(new Error('Channel not found'));
+
+    await expect(sshResize('ghost', 80, 24)).rejects.toThrow('Channel not found');
+  });
+});
+
+describe('sshCloseChannel', () => {
+  it('invokes ssh_close_channel with session ID', async () => {
+    mockInvoke.mockResolvedValueOnce(undefined);
+
+    await sshCloseChannel('session-1');
+
+    expect(mockInvoke).toHaveBeenCalledOnce();
+    expect(mockInvoke).toHaveBeenCalledWith('ssh_close_channel', {
+      sessionId: 'session-1',
+    });
+  });
+
+  it('returns void on success', async () => {
+    mockInvoke.mockResolvedValueOnce(undefined);
+
+    const result = await sshCloseChannel('s1');
+
+    expect(result).toBeUndefined();
+  });
+
+  it('propagates invoke errors', async () => {
+    mockInvoke.mockRejectedValueOnce(new Error('Disconnect failed'));
+
+    await expect(sshCloseChannel('bad')).rejects.toThrow('Disconnect failed');
   });
 });

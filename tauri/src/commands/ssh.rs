@@ -4,20 +4,23 @@ use std::sync::Arc;
 
 use russh::client;
 use russh::keys::{Algorithm, HashAlg, PrivateKey, PrivateKeyWithHashAlg, PublicKey};
+use russh::{ChannelMsg, ChannelWriteHalf};
 use serde::{Deserialize, Serialize};
-use tauri::command;
+use tauri::{command, Emitter};
 use tokio::sync::Mutex;
 
 const SSH_KEYS_SERVICE: &str = "dev.hrdtr.sheil.ssh_keys";
 
 pub struct SshState {
     sessions: Mutex<HashMap<String, client::Handle<Client>>>,
+    channels: Mutex<HashMap<String, ChannelWriteHalf<client::Msg>>>,
 }
 
 impl SshState {
     pub fn new() -> Self {
         Self {
             sessions: Mutex::new(HashMap::new()),
+            channels: Mutex::new(HashMap::new()),
         }
     }
 }
@@ -55,6 +58,12 @@ pub struct ImportedKeyInfo {
     fingerprint: String,
 }
 
+#[derive(Clone, Serialize)]
+struct SshOutputEvent {
+    session_id: String,
+    data: Vec<u8>,
+}
+
 #[derive(Debug, thiserror::Error)]
 enum SshError {
     #[error("SSH error: {0}")]
@@ -65,6 +74,8 @@ enum SshError {
     Keyring(#[from] keyring::Error),
     #[error("Session not found: {0}")]
     SessionNotFound(String),
+    #[error("Channel not found: {0}")]
+    ChannelNotFound(String),
     #[error("Unsupported key algorithm: {0}")]
     UnsupportedKeyType(String),
     #[error("Authentication failed")]
@@ -131,10 +142,8 @@ pub async fn ssh_connect(
         SshAuth::Key(key_name) => {
             let key_data = retrieve_ssh_key(&key_name)?;
             let key = parse_private_key(&key_data)?;
-            let key_with_hash = PrivateKeyWithHashAlg::new(
-                Arc::new(key),
-                Some(HashAlg::Sha256),
-            );
+            let key_with_hash =
+                PrivateKeyWithHashAlg::new(Arc::new(key), Some(HashAlg::Sha256));
 
             let result = handle
                 .authenticate_publickey(&username, key_with_hash)
@@ -163,6 +172,7 @@ pub async fn ssh_disconnect(
     state: tauri::State<'_, SshState>,
     session_id: String,
 ) -> Result<(), String> {
+    state.channels.lock().await.remove(&session_id);
     let removed = state.sessions.lock().await.remove(&session_id);
 
     match removed {
@@ -203,6 +213,123 @@ pub async fn ssh_list_sessions(
 ) -> Result<Vec<String>, String> {
     let sessions = state.sessions.lock().await;
     Ok(sessions.keys().cloned().collect())
+}
+
+#[command]
+pub async fn ssh_open_channel(
+    app_handle: tauri::AppHandle,
+    state: tauri::State<'_, SshState>,
+    session_id: String,
+    cols: u32,
+    rows: u32,
+) -> Result<(), String> {
+    let sessions = state.sessions.lock().await;
+    let handle = sessions
+        .get(&session_id)
+        .ok_or_else(|| SshError::SessionNotFound(session_id.clone()))?;
+
+    let channel = handle
+        .channel_open_session()
+        .await
+        .map_err(SshError::Ssh)?;
+
+    channel
+        .request_pty(false, "xterm-256color", cols, rows, 0, 0, &[])
+        .await
+        .map_err(SshError::Ssh)?;
+
+    channel
+        .request_shell(false)
+        .await
+        .map_err(SshError::Ssh)?;
+
+    let (mut read_half, write_half) = channel.split();
+    drop(sessions);
+
+    state
+        .channels
+        .lock()
+        .await
+        .insert(session_id.clone(), write_half);
+
+    let sid = session_id.clone();
+    tokio::spawn(async move {
+        loop {
+            match read_half.wait().await {
+                Some(ChannelMsg::Data { data }) => {
+                    let _ = app_handle.emit(
+                        "ssh-output",
+                        SshOutputEvent {
+                            session_id: sid.clone(),
+                            data: data.to_vec(),
+                        },
+                    );
+                }
+                Some(ChannelMsg::ExitStatus { .. }) | None => {
+                    let _ = app_handle.emit(
+                        "ssh-exit",
+                        serde_json::json!({ "sessionId": sid }),
+                    );
+                    break;
+                }
+                _ => {}
+            }
+        }
+    });
+
+    log::info!("PTY channel opened on session {}", session_id);
+    Ok(())
+}
+
+#[command]
+pub async fn ssh_write(
+    state: tauri::State<'_, SshState>,
+    session_id: String,
+    data: Vec<u8>,
+) -> Result<(), String> {
+    let channels = state.channels.lock().await;
+    let write_half = channels
+        .get(&session_id)
+        .ok_or_else(|| SshError::ChannelNotFound(session_id.clone()))?;
+
+    write_half
+        .data_bytes(data)
+        .await
+        .map_err(SshError::Ssh)?;
+
+    Ok(())
+}
+
+#[command]
+pub async fn ssh_resize(
+    state: tauri::State<'_, SshState>,
+    session_id: String,
+    cols: u32,
+    rows: u32,
+) -> Result<(), String> {
+    let channels = state.channels.lock().await;
+    let write_half = channels
+        .get(&session_id)
+        .ok_or_else(|| SshError::ChannelNotFound(session_id.clone()))?;
+
+    write_half
+        .window_change(cols, rows, 0, 0)
+        .await
+        .map_err(SshError::Ssh)?;
+
+    Ok(())
+}
+
+#[command]
+pub async fn ssh_close_channel(
+    state: tauri::State<'_, SshState>,
+    session_id: String,
+) -> Result<(), String> {
+    let removed = state.channels.lock().await.remove(&session_id);
+    if removed.is_some() {
+        log::info!("PTY channel closed on session {}", session_id);
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -258,6 +385,9 @@ mod tests {
 
         let err = SshError::SessionNotFound("123".into());
         assert!(err.to_string().contains("123"));
+
+        let err = SshError::ChannelNotFound("456".into());
+        assert!(err.to_string().contains("456"));
     }
 
     #[test]
