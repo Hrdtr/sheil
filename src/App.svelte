@@ -1,9 +1,9 @@
 <script lang="ts">
-	import HelloWorld from '$lib/components/HelloWorld.svelte';
+	import TerminalView from '$lib/components/terminal-view.svelte';
 </script>
 
-<main
-	class="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4 select-none"
->
-	<HelloWorld />
+<main class="flex min-h-screen items-center justify-center bg-gray-950 p-4">
+	<div class="h-[600px] w-full max-w-3xl">
+		<TerminalView />
+	</div>
 </main>

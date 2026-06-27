@@ -23,6 +23,15 @@ importers:
       '@types/node':
         specifier: ^26.0.1
         version: 26.0.1
+      '@xterm/addon-fit':
+        specifier: ^0.11.0
+        version: 0.11.0
+      '@xterm/addon-web-links':
+        specifier: ^0.12.0
+        version: 0.12.0
+      '@xterm/addon-webgl':
+        specifier: ^0.19.0
+        version: 0.19.0
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -32,6 +41,9 @@ importers:
       tailwindcss:
         specifier: ^4.3.1
         version: 4.3.1
+      xterm:
+        specifier: ^5.3.0
+        version: 5.3.0
     devDependencies:
       '@commitlint/config-conventional':
         specifier: ^21.1.0
@@ -735,13 +747,6 @@ packages:
     resolution: {integrity: sha512-zsM8uOeqvVGHsAXsJxsT28ttosFahLJKCLOTUBqRAtKnVgGSRitds9T432QiT8b77Yga7JIBkulIRRlJPtYhRA==}
     engines: {node: '>=14.0.0'}
     cpu: [wasm32]
-    bundledDependencies:
-      - '@emnapi/core'
-      - '@emnapi/runtime'
-      - '@emnapi/wasi-threads'
-      - '@napi-rs/wasm-runtime'
-      - '@tybys/wasm-util'
-      - tslib
 
   '@tailwindcss/oxide-win32-arm64-msvc@4.3.1':
     resolution: {integrity: sha512-aiNvSq9BsVk8V513lDKlrCFAgf8qBMPZTpgEhInL+NwQqs97mYmupVMrPrgBBSL8Pv/0zXu9MrMF9rMun1ZeNg==}
@@ -928,6 +933,15 @@ packages:
 
   '@vitest/utils@4.1.9':
     resolution: {integrity: sha512-A51o8ymO5PpqlWNnBP9ZHPXDIpuMtTLlGSjN7la4US+LJzoUMyhwjA5QXlm39JexgwHKW4Xjs8Z2d3dLCXOeuA==}
+
+  '@xterm/addon-fit@0.11.0':
+    resolution: {integrity: sha512-jYcgT6xtVYhnhgxh3QgYDnnNMYTcf8ElbxxFzX0IZo+vabQqSPAjC3c1wJrKB5E19VwQei89QCiZZP86DCPF7g==}
+
+  '@xterm/addon-web-links@0.12.0':
+    resolution: {integrity: sha512-4Smom3RPyVp7ZMYOYDoC/9eGJJJqYhnPLGGqJ6wOBfB8VxPViJNSKdgRYb8NpaM6YSelEKbA2SStD7lGyqaobw==}
+
+  '@xterm/addon-webgl@0.19.0':
+    resolution: {integrity: sha512-b3fMOsyLVuCeNJWxolACEUED0vm7qC0cy4wRvf3oURSzDTYVQiGPhTnhWZwIHdvC48Y+oLhvYXnY4XDXPoJo6A==}
 
   acorn@8.17.0:
     resolution: {integrity: sha512-xRQbDb9BnwDafYNn6Vwl839DYVjqXYb1XVGtWAZ1kcDc6iwAL4hg3B1dZlRiuENFeO2H53gFG3in621AdERVAg==}
@@ -1766,6 +1780,10 @@ packages:
   xmlchars@2.2.0:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
 
+  xterm@5.3.0:
+    resolution: {integrity: sha512-8QqjlekLUFTrU6x7xck1MsPzPA571K5zNqWm0M0oroYEWVOptZ0+ubQSkQ3uxIEhcIHRujJy6emDWX4A7qyFzg==}
+    deprecated: This package is now deprecated. Move to @xterm/xterm instead.
+
   y18n@5.0.8:
     resolution: {integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==}
     engines: {node: '>=10'}
@@ -1835,10 +1853,7 @@ snapshots:
       tinyexec: 1.2.4
       yargs: 18.0.0
     transitivePeerDependencies:
-      - '@types/node'
       - conventional-commits-filter
-      - conventional-commits-parser
-      - typescript
 
   '@commitlint/config-conventional@21.1.0':
     dependencies:
@@ -1885,9 +1900,6 @@ snapshots:
       es-toolkit: 1.48.1
       is-plain-obj: 4.1.0
       picocolors: 1.1.1
-    transitivePeerDependencies:
-      - '@types/node'
-      - typescript
 
   '@commitlint/message@21.0.2': {}
 
@@ -1905,7 +1917,6 @@ snapshots:
       tinyexec: 1.2.4
     transitivePeerDependencies:
       - conventional-commits-filter
-      - conventional-commits-parser
 
   '@commitlint/resolve-extends@21.1.0':
     dependencies:
@@ -2426,6 +2437,12 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
+  '@xterm/addon-fit@0.11.0': {}
+
+  '@xterm/addon-web-links@0.12.0': {}
+
+  '@xterm/addon-webgl@0.19.0': {}
+
   acorn@8.17.0: {}
 
   ajv@8.20.0:
@@ -2497,10 +2514,7 @@ snapshots:
       '@commitlint/cli': 21.1.0(@types/node@26.0.1)(conventional-commits-parser@6.4.0)(typescript@6.0.3)
       '@commitlint/types': 21.1.0
     transitivePeerDependencies:
-      - '@types/node'
       - conventional-commits-filter
-      - conventional-commits-parser
-      - typescript
 
   compare-func@2.0.0:
     dependencies:
@@ -2628,7 +2642,6 @@ snapshots:
       meow: 13.2.0
     transitivePeerDependencies:
       - conventional-commits-filter
-      - conventional-commits-parser
 
   global-directory@5.0.0:
     dependencies:
@@ -3001,8 +3014,6 @@ snapshots:
       sade: 1.8.1
       svelte: 5.56.4
       typescript: 6.0.3
-    transitivePeerDependencies:
-      - picomatch
 
   svelte@5.56.4:
     dependencies:
@@ -3158,6 +3169,8 @@ snapshots:
   xml-name-validator@5.0.0: {}
 
   xmlchars@2.2.0: {}
+
+  xterm@5.3.0: {}
 
   y18n@5.0.8: {}
 
