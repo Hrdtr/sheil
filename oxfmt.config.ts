@@ -23,5 +23,5 @@ export default defineConfig({
       'unknown',
     ],
   },
-  ignorePatterns: [],
+  ignorePatterns: ['tauri/gen/**'],
 });

@@ -20,6 +20,12 @@ dist-ssr
 !.env.example
 /tauri/target/
 /tauri/gen/schemas
+**/.gradle/
+**/build/
+local.properties
+**/DerivedData/
+**/xcuserdata/
+Pods/
 .husky/_
 
 # Multica workspace files

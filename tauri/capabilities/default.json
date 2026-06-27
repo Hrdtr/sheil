@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "enables the default permissions",
   "windows": ["main"],
-  "permissions": ["core:default", "keystore:default", "background-service:default"]
+  "permissions": ["core:default", "log:default", "notification:default"]
 }

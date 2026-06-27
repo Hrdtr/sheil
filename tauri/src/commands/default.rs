@@ -17,8 +17,8 @@ pub fn write(path: String, contents: String) -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn write_then_read_roundtrip() {

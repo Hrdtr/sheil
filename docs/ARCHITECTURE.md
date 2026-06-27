@@ -18,9 +18,9 @@ Sheil is an open-source, cross-platform SSH/telnet/serial client — a Termius a
 | **Serial**                 | [serialport-rs](https://crates.io/crates/serialport) 4                                                    | Cross-platform serial port enumeration and I/O (USB CDC-ACM, FTDI, etc.).                                                                                              |
 | **Telnet**                 | Custom Rust (TCP + option negotiation state machine)                                                      | ~200 LoC. Telnet is a trivial protocol; no heavyweight dependency needed.                                                                                              |
 | **Local database**         | [SQLite](https://sqlite.org/) via [sqlx](https://crates.io/crates/sqlx) 0.8                               | Embedded, zero-config. Stores host configs, connection groups, tags, snippets, audit trail. Never stores credentials.                                                  |
-| **Async runtime**          | [Tokio](https://tokio.rs/) 1                                                                              | Industry-standard async runtime for Rust. Required by russh, sqlx, and tauri-plugin-background-service.                                                                |
-| **Secure storage**         | [tauri-plugin-keystore](https://crates.io/crates/tauri-plugin-keystore) 2.1                               | Wraps macOS Keychain, Windows Credential Manager, Linux Secret Service, iOS Keychain, Android Keystore. Passwords and private keys never touch SQLite.                 |
-| **Background tasks**       | [tauri-plugin-background-service](https://crates.io/crates/tauri-plugin-background-service) 0.7           | Android foreground service + iOS BGTaskScheduler for SSH connection keepalive on mobile.                                                                               |
+| **Async runtime**          | [Tokio](https://tokio.rs/) 1                                                                              | Industry-standard async runtime for Rust. Required by russh, sqlx, and Tauri. Spawned for SSH keepalive and background I/O.                                            |
+| **Secure storage**         | [keyring](https://crates.io/crates/keyring) 3                                                             | Wraps macOS Keychain, Windows Credential Manager, Linux Secret Service, iOS Keychain, Android Keystore. Passwords and private keys never touch SQLite.                 |
+| **Background tasks**       | `tokio::spawn` (native Tokio tasks)                                                                       | Lightweight async tasks spawned with Tauri `AppHandle` managed state for SSH connection keepalive on desktop.                                                          |
 | **Logging**                | [tauri-plugin-log](https://crates.io/crates/tauri-plugin-log) 2 + [log](https://crates.io/crates/log) 0.4 | Structured logging with levels. Debug-only in dev; stripped from release.                                                                                              |
 | **Serialization**          | [serde](https://serde.rs/) + [serde_json](https://crates.io/crates/serde_json)                            | Tauri IPC serialization, command argument/return types.                                                                                                                |
 | **Error handling**         | [thiserror](https://crates.io/crates/thiserror) 2                                                         | Derive `Error` for typed error enums. Serde-compatible error serialization to frontend.                                                                                |
@@ -89,11 +89,10 @@ Sheil is an open-source, cross-platform SSH/telnet/serial client — a Termius a
 │      └── errors.rs     Typed error enum + serde format   │
 ├──────────────────────────────────────────────────────────┤
 │  Tauri Plugins                                           │
-│  ├── tauri-plugin-keystore     OS credential store       │
-│  ├── tauri-plugin-log          Structured logging        │
-│  └── tauri-plugin-bg-service   Mobile keepalive          │
+│  └── tauri-plugin-log          Structured logging        │
 ├──────────────────────────────────────────────────────────┤
 │  Rust Dependencies                                       │
+│  ├── keyring 3              OS credential store         │
 │  ├── russh 0.61             SSH client (sessions, PTY,   │
 │  │                            port forwarding, keys)     │
 │  ├── russh-sftp 2           SFTP client/server           │
@@ -164,16 +163,20 @@ App.svelte
 
 ```
 lib.rs  ──  Tauri Builder
-  ├── .plugin(tauri_plugin_keystore::init())
-  ├── .plugin(init_with_service(|| PlaceholderService))
+  ├── .plugin(tauri_plugin_log::init())
   ├── .setup(|app| { /* debug logging */ })
-  └── .invoke_handler(generate_handler![read, write])
+  └── .invoke_handler(generate_handler![read, write, store_credential, retrieve_credential, delete_credential])
 
 commands/
   ├── default.rs     Placeholder file I/O (will be replaced)
   │   ├── read(path) → String
   │   └── write(path, contents) → ()
   └── errors.rs      Error enum (Io, Utf8) with serde
+
+keystore.rs
+  ├── store_credential(service, username, password) → ()
+  ├── retrieve_credential(service, username) → String
+  └── delete_credential(service, username) → ()
 ```
 
 **Planned backend expansion** (Phase 1+):
@@ -194,9 +197,9 @@ commands/
   │   ├── update_host(id, host)
   │   └── delete_host(id)
   ├── keystore.rs      Credential operations
-  │   ├── store(name, key)
-  │   ├── get(name) → Key
-  │   └── delete(name)
+  │   ├── store_credential(service, username, password)
+  │   ├── retrieve_credential(service, username) → password
+  │   └── delete_credential(service, username)
   └── snippets.rs      Saved command management
 ```
 
@@ -212,12 +215,13 @@ commands/
 └──────────────┬──────────────────────┘
                ▼
 ┌─────────────────────────────────────┐
-│  Frontend: invoke('store', { name,  │
-│             key })                  │
+│  Frontend: invoke('store', {        │
+│    service, username, password      │
+│  })                                 │
 └──────────────┬──────────────────────┘
                ▼
 ┌─────────────────────────────────────┐
-│  tauri-plugin-keystore              │
+│  keyring crate (v3)                 │
 │  ├── macOS: Keychain                │
 │  ├── Windows: Credential Manager    │
 │  ├── Linux: Secret Service (D-Bus)  │
@@ -228,7 +232,7 @@ commands/
 
 **Principles:**
 
-1. **Credentials never touch SQLite.** Host configs (name, hostname, port, username) live in SQLite. Passwords and private keys are stored exclusively via `tauri-plugin-keystore` in the OS-native secure store.
+1. **Credentials never touch SQLite.** Host configs (name, hostname, port, username) live in SQLite. Passwords and private keys are stored exclusively via the `keyring` crate in the OS-native secure store.
 2. **Keys never leave the backend.** The frontend sends credentials to Rust commands; the Rust side unwraps from the keystore and passes directly to `russh` for authentication. The frontend never sees raw key material.
 3. **Import only.** MVP (Phase 1) supports importing existing Ed25519/RSA keys. Key generation and fingerprint viewing are deferred to Phase 3.
 
@@ -268,7 +272,7 @@ Cross-device sync follows zero-trust principles:
 
 **Flow:**
 
-1. User imports keys into Sheil (stored in OS keystore via `tauri-plugin-keystore`).
+1. User imports keys into Sheil (stored in OS keystore via the `keyring` crate).
 2. On SSH connection, the agent forwarding flag is negotiated with the remote host.
 3. When the remote host requests agent authentication (e.g., for a `git push` on the server), `russh` forwards the request to the Sheil agent process.
 4. The agent retrieves the key from the keystore, performs the signing operation, and returns the response — all without the key leaving the keystore.
@@ -311,9 +315,8 @@ Cross-device sync follows zero-trust principles:
   - Two-finger scroll → terminal scrollback
 - **Column limit** — Default to 80 columns on mobile, max 120. xterm.js performance degrades at ≥200 cols on Android WebView.
 - **Keyboard accessory bar** — Custom bar above the on-screen keyboard with: Tab, Esc, Ctrl, arrow keys, pipe (`|`), slash (`/`).
-- **Background service** — `tauri-plugin-background-service` keeps SSH sessions alive:
-  - Android: Foreground service with persistent notification.
-  - iOS: BGTaskScheduler with limited background execution window.
+- **Background keepalive** — SSH connections use `tokio::spawn` with Tauri `AppHandle` managed state for keepalive on desktop:
+  - Lightweight async task, no plugin dependency.
 - **Build pipeline** — Separate GitHub Actions workflows for Android (`.apk`) and iOS (requires Apple Developer account for signing).
 
 ### Build Configuration
@@ -387,6 +390,7 @@ sheil/
 │   ├── src/
 │   │   ├── main.rs               Windows subsystem + entry
 │   │   ├── lib.rs                Tauri builder + plugin registration
+│   │   ├── keystore.rs           Credential store/retrieve/delete (keyring crate)
 │   │   └── commands/
 │   │       ├── mod.rs
 │   │       ├── default.rs        Read/write commands (placeholder)
@@ -416,13 +420,13 @@ sheil/
 
 ### Why Tauri over Electron?
 
-| Factor           | Electron                         | Tauri v2                                    |
-| ---------------- | -------------------------------- | ------------------------------------------- |
-| Bundle size      | 80–250MB                         | 600KB–10MB                                  |
-| Memory (idle)    | 150–300MB                        | 30–40MB                                     |
-| Backend language | Node.js                          | Rust                                        |
-| Mobile support   | None (separate toolchain needed) | iOS + Android (built-in)                    |
-| Plugin ecosystem | Vast (npm)                       | Growing (keystore, background-service, PTY) |
+| Factor           | Electron                         | Tauri v2                         |
+| ---------------- | -------------------------------- | -------------------------------- |
+| Bundle size      | 80–250MB                         | 600KB–10MB                       |
+| Memory (idle)    | 150–300MB                        | 30–40MB                          |
+| Backend language | Node.js                          | Rust                             |
+| Mobile support   | None (separate toolchain needed) | iOS + Android (built-in)         |
+| Plugin ecosystem | Vast (npm)                       | Growing (log, notification, PTY) |
 
 Tauri wins on bundle size, memory, and mobile support. The Rust backend also gives us direct access to `russh`, `serialport-rs`, and `sqlx` without Node.js native addon complexity.
 

@@ -23,5 +23,5 @@ export default defineConfig({
     builtin: true,
   },
   globals: {},
-  ignorePatterns: ['server/migrations/**/*'],
+  ignorePatterns: ['tauri/gen/**'],
 });

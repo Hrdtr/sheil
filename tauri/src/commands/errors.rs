@@ -65,4 +65,3 @@ mod tests {
         assert!(obj.contains_key("message"));
     }
 }
-

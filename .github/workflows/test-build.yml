@@ -124,9 +124,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libudev-dev
 
-      - name: Init Android project
-        run: nubx tauri android init
-
       - name: Build
         run: nubx tauri android build
 
@@ -149,9 +146,6 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: './tauri -> target'
-
-      - name: Init iOS project
-        run: nubx tauri ios init
 
       - name: Build
         run: nubx tauri ios build
