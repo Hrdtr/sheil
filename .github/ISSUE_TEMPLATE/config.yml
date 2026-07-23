@@ -1,0 +1,26 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/Hrdtr/sheil/discussions
+    about: |
+      Ask questions, share ideas, or start a general discussion about Sheil.
+      Please use Discussions instead of issues for questions and non-actionable
+      conversation.
+
+  - name: Contributing Guide
+    url: https://github.com/Hrdtr/sheil/blob/main/CONTRIBUTING.md
+    about: |
+      Read the contributing guide before opening a pull request. All
+      contributions require a DCO sign-off per the GPLv3 license.
+
+  - name: Security Policy
+    url: https://github.com/Hrdtr/sheil/blob/main/SECURITY.md
+    about: |
+      Report a security vulnerability privately. Do NOT open a public issue
+      for security bugs.
+
+  # - name: Documentation
+  #   url: https://github.com/Hrdtr/sheil/tree/main/docs
+  #   about: |
+  #     Browse architecture docs, design decisions, and integration guides.

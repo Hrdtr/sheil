@@ -1,0 +1,10 @@
+allowBuilds:
+  '@parcel/watcher': true
+  'esbuild': true
+  'koffi': true # Needed by `typescript-native-bridge` override, remove when that pkg not used anymore.
+  'vue-demi': true
+
+overrides:
+  # https://github.com/vuejs/language-tools/issues/5381
+  # https://github.com/johnsoncodehk/typescript-native-bridge
+  'typescript': npm:typescript-native-bridge
