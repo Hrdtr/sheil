@@ -9,6 +9,7 @@ const props = withDefaults(defineProps<{ sidebarOpen?: boolean }>(), { sidebarOp
 const emit = defineEmits<{ 'update:sidebar-open': [value: boolean] }>();
 
 const { sessions, activeTabId, switchTab, reorder } = useSessions();
+const { settingsTabId } = useSettings();
 const { panelOpen: pfOpen, forwards } = usePortForwarding();
 const { panelOpen: sftpOpen } = useSftp();
 
@@ -50,10 +51,11 @@ onBeforeUnmount(() => {
     data-tauri-drag-region
     :open="sidebarOpen"
     @update:open="emit('update:sidebar-open', $event)"
+    class="bg-sidebar text-sidebar-foreground"
   >
     <AppSidebar class="**:data-[slot='sidebar-container']:ease-linear!" />
     <SidebarInset
-      class="flex flex-col h-dvh md:h-[calc(100dvh-calc((--spacing(2))*2))] overflow-hidden transition-all duration-200 ease-linear"
+      class="flex flex-col h-dvh md:h-[calc(100dvh-calc((--spacing(2))*2))] overflow-hidden transition-all duration-200 ease-linear bg-background/65 shadow-none!"
       :class="
         sidebarOpen ? 'md:my-2! md:mr-2!' : 'h-dvh! m-0! md:peer-data-[variant=inset]:rounded-none'
       "
@@ -65,7 +67,7 @@ onBeforeUnmount(() => {
       >
         <SidebarTrigger
           variant="secondary"
-          class="bg-accent/50 rounded-lg transition-all duration-200 ease-linear"
+          class="shrink-0 transition-all duration-200 ease-linear"
           :class="!sidebarOpen && isMacos && !isFullscreen ? 'ml-20' : ''"
         />
         <!-- Tab bar -->
@@ -76,12 +78,12 @@ onBeforeUnmount(() => {
           @close-tab="(tabId) => requestDisconnectTab?.(tabId)"
           @reorder-tab="(fromIndex, toIndex) => reorder(fromIndex, toIndex)"
         />
-        <DropdownMenu v-if="sessions.length > 0">
+        <DropdownMenu v-if="sessions.length > 0 && activeTabId !== settingsTabId">
           <DropdownMenuTrigger as-child>
             <Button
               variant="secondary"
               size="icon-sm"
-              class="bg-accent/50 shrink-0 rounded-lg"
+              class="shrink-0"
               :class="panelsOpen ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''"
             >
               <NetworkIcon class="size-3.5" />

@@ -183,8 +183,6 @@ defineExpose({ open, close });
             Import Key
           </Button>
 
-          <Separator />
-
           <div
             v-if="(keys?.length ?? 0) === 0"
             class="flex flex-col items-center gap-2 py-6 text-muted-foreground"
@@ -196,7 +194,7 @@ defineExpose({ open, close });
 
           <FieldSet v-else>
             <FieldLegend variant="label">Imported Keys</FieldLegend>
-            <FieldGroup class="gap-3">
+            <FieldGroup class="gap-2">
               <div
                 v-for="key in keys"
                 :key="key.name"
@@ -233,7 +231,8 @@ defineExpose({ open, close });
                       <AlertDialogTitle>Delete SSH key?</AlertDialogTitle>
                       <AlertDialogDescription>
                         This will delete
-                        <strong>{{ deleteSshKeyName }}</strong> from encrypted storage.
+                        <span class="text-foreground">{{ deleteSshKeyName }}</span> from encrypted
+                        storage.
                         <template v-if="deleteSshKeyName && keyUsage.get(deleteSshKeyName)">
                           <br /><br />
                           <span class="font-medium text-destructive">Warning:</span>
