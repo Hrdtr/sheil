@@ -236,12 +236,10 @@ async function reconnect() {
         class="grid place-items-center w-full h-full overflow-y-auto select-none"
       >
         <div class="flex flex-col gap-10 w-full max-w-md mx-auto px-6 pb-14">
-          <div class="flex flex-col gap-0.5">
+          <div class="flex flex-col gap-1">
             <span class="text-base font-semibold">Welcome to Sheil</span>
-            <span class="text-xs text-muted-foreground"
-              >Open a connection from the sidebar{{
-                recentHosts.length > 0 ? ', or pick a recent host below.' : ''
-              }}</span
+            <span class="text-xs text-muted-foreground leading-normal"
+              >Add, manage, and connect to your hosts, or quick connect from the sidebar.</span
             >
           </div>
           <div v-if="recentHosts.length > 0" class="w-full">
