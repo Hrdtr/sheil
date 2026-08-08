@@ -15,116 +15,36 @@ An open-source, cross-platform tool for managing remote and device connections w
 - **Cross-platform**: Built with Tauri 2 for macOS, Windows, and Linux
 - **Modern UI**: Clean interface with dark/light mode
 
-## Requirements
+## Download
 
-- **Node.js** >= 24.17.0
-- **Rust** (2021 edition, MSRV 1.77.2)
-- **pnpm** 11.x
+Grab the latest release for your platform from the [releases page](https://github.com/Hrdtr/sheil/releases):
 
-## Setup
-
-Install dependencies:
-
-```bash
-pnpm install
-```
+| Platform              | Asset                                              |
+| --------------------- | -------------------------------------------------- |
+| macOS (Apple Silicon) | `Sheil_<version>_aarch64.dmg`                      |
+| macOS (Intel)         | `Sheil_<version>_x64.dmg`                          |
+| Windows               | `Sheil_<version>_x64-setup.exe` or `.msi`          |
+| Linux (x86_64)        | `.deb`, `.rpm`, or `.AppImage` (`amd64`/`x86_64`)  |
+| Linux (ARM64)         | `.deb`, `.rpm`, or `.AppImage` (`arm64`/`aarch64`) |
 
 ## Development
 
-Start the development server (Tauri + Nuxt):
+Requirements: Node.js >= 24.17.0, Rust (MSRV 1.77.2), pnpm 11.x
 
 ```bash
-pnpm exec tauri dev
+pnpm install          # install dependencies
+pnpm exec tauri dev   # run the app in dev mode
+pnpm exec tauri build # production build
+pnpm run lint         # lint
+pnpm run typecheck    # type check
+pnpm run test         # run Rust tests
 ```
 
-This launches the Nuxt dev server on `:3000` and opens the Tauri desktop app with hot-reload enabled.
-
-### Frontend-only development
-
-```bash
-pnpm run dev
-```
-
-Runs the Nuxt dev server without Tauri (useful for UI work that doesn't require backend interaction).
-
-## Build
-
-Create a production build:
-
-```bash
-pnpm exec tauri build
-```
-
-Output binaries are placed in `tauri/target/release/bundle/`.
-
-### Frontend-only build
-
-```bash
-pnpm run build
-```
-
-Generates static files to `dist/` (used by Tauri during the build process).
-
-## Code Quality
-
-### Formatting
-
-```bash
-pnpm run fmt          # Format with oxfmt
-pnpm run fmt:check    # Check formatting
-```
-
-### Linting
-
-```bash
-pnpm run lint         # Lint with oxlint
-```
-
-### Type checking
-
-```bash
-pnpm run typecheck    # nuxi typecheck
-```
-
-### Testing
-
-```bash
-pnpm run test         # cargo test --manifest-path tauri/Cargo.toml
-```
-
-## Project Structure
-
-```
-sheil/
-├── app/              # Nuxt 4 / Vue 3 frontend
-│   ├── components/   # Vue components (terminal, hosts, settings, etc.)
-│   ├── composables/  # Reactive state (sessions, hosts, AI engine, etc.)
-│   └── utils/        # Tauri IPC wrappers and helpers
-├── tauri/            # Tauri 2 / Rust backend
-│   ├── src/
-│   │   ├── commands/ # IPC handlers (ssh, sftp, hosts, port_forward, ai)
-│   │   ├── db.rs     # SQLite initialization and migrations
-│   │   ├── crypto.rs # AES-256-GCM encryption
-│   │   └── secrets.rs # Credential storage
-│   └── migrations/   # SQLx database migrations
-└── package.json      # Workspace root
-```
+See [AGENTS.md](AGENTS.md) for architecture details and coding conventions.
 
 ## Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
-
-- Developer Certificate of Origin (DCO) sign-off requirements
-- Pull request process
-- Code of conduct
-
-All commits must be signed off with `git commit -s`.
-
-## Tech Stack
-
-**Frontend**: Nuxt 4, Vue 3, Tailwind CSS v4, xterm.js, VueUse  
-**Backend**: Tauri 2, Rust, russh, sqlx, tokio, llama-cpp-2, aes-gcm  
-**Tooling**: pnpm, oxfmt, oxlint, commitlint
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first. All commits must be signed off with `git commit -s`.
 
 ## License
 
