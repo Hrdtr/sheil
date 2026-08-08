@@ -1,19 +1,28 @@
 <script setup lang="ts">
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Toaster } from '@/components/ui/sonner';
 import 'vue-sonner/style.css';
 
 const { sessions, activeSession, activeTabId, connect, disconnect, switchTab, setTitle } =
   useSessions();
 const { recentHosts, clear: clearRecent } = useRecentHosts();
-const { confirmCloseDialogOpen, confirmClose, cancelClose, showConfirmCloseDialog } =
-  useConfirmClose();
+const {
+  confirmCloseEnabled,
+  confirmCloseDialogOpen,
+  confirmClose,
+  cancelClose,
+  showConfirmCloseDialog,
+} = useConfirmClose();
 const { openSettings, settingsTabId } = useSettings();
 const { togglePanel: togglePortForwardingPanel } = usePortForwarding();
 const { togglePanel: toggleSftpPanel } = useSftp();
 const { enabled: aiEnabled, commandPaletteEnabled: aiPaletteEnabled } = useAiSettings();
 
 const activeSessionCount = computed(
-  () => sessions.value.filter((s) => s.state === 'connected' || s.state === 'connecting').length,
+  () =>
+    sessions.value.filter(
+      (s) => s.tabId !== settingsTabId && (s.state === 'connected' || s.state === 'connecting'),
+    ).length,
 );
 
 const sidebarOpen = ref<boolean>();
@@ -146,7 +155,11 @@ defineShortcuts({
   },
   'meta_q': {
     handler: () => {
-      showConfirmCloseDialog({ destroy: true });
+      if (confirmCloseEnabled.value && activeSessionCount.value > 0) {
+        showConfirmCloseDialog({ destroy: true });
+      } else {
+        getCurrentWindow().destroy();
+      }
     },
     usingInput: false,
   },
@@ -156,8 +169,9 @@ async function reconnect() {
   const tabId = activeTabId.value;
   const hostId = activeSession.value?.hostId;
   if (!tabId || !hostId) return;
+  const index = sessions.value.findIndex((s) => s.tabId === tabId);
   await disconnect(tabId);
-  await connect(hostId);
+  await connect(hostId, index);
 }
 </script>
 

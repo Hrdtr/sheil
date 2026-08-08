@@ -3,6 +3,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 
 function _useConfirmClose() {
   const { sessions } = useSessions();
+  const { settingsTabId } = useSettings();
 
   const enabled = useLocalStorage('settings:confirm-close', false);
   const destroy = ref(false);
@@ -13,7 +14,9 @@ function _useConfirmClose() {
   onMounted(async () => {
     unlisten = await getCurrentWindow().onCloseRequested((event) => {
       const activeSessions = sessions.value.filter(
-        (session) => session.state === 'connected' || session.state === 'connecting',
+        (session) =>
+          session.tabId !== settingsTabId &&
+          (session.state === 'connected' || session.state === 'connecting'),
       );
 
       if (!enabled.value || activeSessions.length === 0) {

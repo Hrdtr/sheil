@@ -95,15 +95,16 @@ function _useSessions() {
    * transitions to `'error'` and the error is rethrown.
    *
    * @param hostId - Id of the host configuration to connect to.
+   * @param insertIndex - Optional index to insert the tab at (for reconnection).
    * @returns The backend SSH session id.
    */
-  const connect = async (hostId: string): Promise<string> => {
+  const connect = async (hostId: string, insertIndex?: number): Promise<string> => {
     const hostConfig = await commands.host.resolve(hostId);
     const tabId = newTabId();
 
     useRecentHosts().push(hostId);
 
-    sessions.value.push({
+    const session: Session = {
       tabId,
       hostId,
       hostName: hostConfig.name,
@@ -111,7 +112,13 @@ function _useSessions() {
       sshSessionId: null,
       state: 'connecting',
       error: null,
-    });
+    };
+
+    if (insertIndex !== undefined && insertIndex >= 0 && insertIndex <= sessions.value.length) {
+      sessions.value.splice(insertIndex, 0, session);
+    } else {
+      sessions.value.push(session);
+    }
     activeTabId.value = tabId;
 
     try {
