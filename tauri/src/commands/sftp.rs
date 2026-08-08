@@ -63,12 +63,17 @@ fn system_time_to_iso8601(time: SystemTime) -> String {
     let shifted_days = total_secs / 86_400 + 719_468;
     let era = shifted_days / 146_097;
     let day_of_era = shifted_days - era * 146_097;
-    let year_of_era = (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
+    let year_of_era =
+        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
     let year_base = year_of_era + era * 400;
     let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
     let month_prime = (5 * day_of_year + 2) / 153;
     let day = day_of_year - (153 * month_prime + 2) / 5 + 1;
-    let month = if month_prime < 10 { month_prime + 3 } else { month_prime - 9 };
+    let month = if month_prime < 10 {
+        month_prime + 3
+    } else {
+        month_prime - 9
+    };
     let year = if month <= 2 { year_base + 1 } else { year_base };
 
     let result = format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}Z");
@@ -596,10 +601,7 @@ mod tests {
 
     #[test]
     fn test_unix_epoch() {
-        assert_eq!(
-            system_time_to_iso8601(UNIX_EPOCH),
-            "1970-01-01T00:00:00Z"
-        );
+        assert_eq!(system_time_to_iso8601(UNIX_EPOCH), "1970-01-01T00:00:00Z");
     }
 
     #[test]
@@ -608,10 +610,7 @@ mod tests {
         // 1970-01-01 to 2024-01-01 = 54 years * 365 + 13 leap days = 19723 days
         // + 14 days to Jan 15 = 19737 days * 86400 + 10*3600 + 30*60 = 1_705_314_600
         let t = UNIX_EPOCH + Duration::from_secs(1_705_314_600);
-        assert_eq!(
-            system_time_to_iso8601(t),
-            "2024-01-15T10:30:00Z"
-        );
+        assert_eq!(system_time_to_iso8601(t), "2024-01-15T10:30:00Z");
     }
 
     #[test]
@@ -621,20 +620,14 @@ mod tests {
         // + 31 (Jan) + 28 (Feb 1-28) = 59 days
         // 1704067200 + 59*86400 + 12*3600 = 1704067200 + 5097600 + 43200 = 1709208000
         let t = UNIX_EPOCH + Duration::from_secs(1_709_208_000);
-        assert_eq!(
-            system_time_to_iso8601(t),
-            "2024-02-29T12:00:00Z"
-        );
+        assert_eq!(system_time_to_iso8601(t), "2024-02-29T12:00:00Z");
     }
 
     #[test]
     fn test_pre_epoch_fallback() {
         // 1969-12-31T23:00:00Z — before epoch, should fall back
         let t = UNIX_EPOCH - Duration::from_secs(3600);
-        assert_eq!(
-            system_time_to_iso8601(t),
-            "1970-01-01T00:00:00Z"
-        );
+        assert_eq!(system_time_to_iso8601(t), "1970-01-01T00:00:00Z");
     }
 
     #[test]
@@ -656,10 +649,7 @@ mod tests {
         // 2023-12-31T23:59:59Z = 2024-01-01T00:00:00Z minus 1 second
         // 19723*86400 - 1 = 1_704_067_199
         let t = UNIX_EPOCH + Duration::from_secs(1_704_067_199);
-        assert_eq!(
-            system_time_to_iso8601(t),
-            "2023-12-31T23:59:59Z"
-        );
+        assert_eq!(system_time_to_iso8601(t), "2023-12-31T23:59:59Z");
     }
 
     #[test]
@@ -668,18 +658,12 @@ mod tests {
         // 1970-01-01 to 2024-01-01 = 19723 days + 31 (Jan) = 19754 days
         // 19754 * 86400 = 1_706_745_600
         let t = UNIX_EPOCH + Duration::from_secs(1_706_745_600);
-        assert_eq!(
-            system_time_to_iso8601(t),
-            "2024-02-01T00:00:00Z"
-        );
+        assert_eq!(system_time_to_iso8601(t), "2024-02-01T00:00:00Z");
     }
 
     #[test]
     fn test_epoch_plus_one_second() {
         let t = UNIX_EPOCH + Duration::from_secs(1);
-        assert_eq!(
-            system_time_to_iso8601(t),
-            "1970-01-01T00:00:01Z"
-        );
+        assert_eq!(system_time_to_iso8601(t), "1970-01-01T00:00:01Z");
     }
 }

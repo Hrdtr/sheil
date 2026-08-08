@@ -115,7 +115,10 @@ impl DownloadProgressEmitter {
     fn emit_progress(&self) {
         let total = self.total_bytes.load(Ordering::Relaxed);
         let downloaded = self.downloaded_bytes.load(Ordering::Relaxed);
-        let raw = downloaded.saturating_mul(100).checked_div(total).unwrap_or(0);
+        let raw = downloaded
+            .saturating_mul(100)
+            .checked_div(total)
+            .unwrap_or(0);
         let percent: u8 = u8::try_from(raw.min(100)).unwrap_or(100);
         let _ = self.app.emit(
             "ai://download-progress",
@@ -153,7 +156,8 @@ impl ProgressHandler for DownloadProgressEmitter {
                 total_bytes,
                 ..
             }) => {
-                self.downloaded_bytes.store(*bytes_completed, Ordering::Relaxed);
+                self.downloaded_bytes
+                    .store(*bytes_completed, Ordering::Relaxed);
                 if *total_bytes > 0 {
                     self.total_bytes.store(*total_bytes, Ordering::Relaxed);
                 }
@@ -572,7 +576,10 @@ mod tests {
     fn percent_calculation_zero_total() {
         let total_bytes: u64 = 0;
         let bytes_downloaded: u64 = 100;
-        let raw = bytes_downloaded.saturating_mul(100).checked_div(total_bytes).unwrap_or(0);
+        let raw = bytes_downloaded
+            .saturating_mul(100)
+            .checked_div(total_bytes)
+            .unwrap_or(0);
         let percent: u8 = u8::try_from(raw.min(100)).unwrap_or(100);
         assert_eq!(percent, 0);
     }
@@ -581,7 +588,10 @@ mod tests {
     fn percent_calculation_partial() {
         let total_bytes: u64 = 1000;
         let bytes_downloaded: u64 = 500;
-        let raw = bytes_downloaded.saturating_mul(100).checked_div(total_bytes).unwrap_or(0);
+        let raw = bytes_downloaded
+            .saturating_mul(100)
+            .checked_div(total_bytes)
+            .unwrap_or(0);
         let percent: u8 = u8::try_from(raw.min(100)).unwrap_or(100);
         assert_eq!(percent, 50);
     }
@@ -590,7 +600,10 @@ mod tests {
     fn percent_calculation_complete() {
         let total_bytes: u64 = 1000;
         let bytes_downloaded: u64 = 1000;
-        let raw = bytes_downloaded.saturating_mul(100).checked_div(total_bytes).unwrap_or(0);
+        let raw = bytes_downloaded
+            .saturating_mul(100)
+            .checked_div(total_bytes)
+            .unwrap_or(0);
         let percent: u8 = u8::try_from(raw.min(100)).unwrap_or(100);
         assert_eq!(percent, 100);
     }
@@ -599,7 +612,10 @@ mod tests {
     fn percent_calculation_saturates_at_100() {
         let total_bytes: u64 = 100;
         let bytes_downloaded: u64 = 200;
-        let raw = bytes_downloaded.saturating_mul(100).checked_div(total_bytes).unwrap_or(0);
+        let raw = bytes_downloaded
+            .saturating_mul(100)
+            .checked_div(total_bytes)
+            .unwrap_or(0);
         let percent: u8 = u8::try_from(raw.min(100)).unwrap_or(100);
         assert_eq!(percent, 100);
     }
@@ -611,7 +627,10 @@ mod tests {
 
     #[test]
     fn clean_command_strips_fences() {
-        assert_eq!(clean_command("```\nfind . -name '*.md'\n```"), "find . -name '*.md'");
+        assert_eq!(
+            clean_command("```\nfind . -name '*.md'\n```"),
+            "find . -name '*.md'"
+        );
     }
 
     #[test]

@@ -17,6 +17,13 @@ const { openSettings, settingsTabId } = useSettings();
 const { togglePanel: togglePortForwardingPanel } = usePortForwarding();
 const { togglePanel: toggleSftpPanel } = useSftp();
 const { enabled: aiEnabled, commandPaletteEnabled: aiPaletteEnabled } = useAiSettings();
+const { checkForUpdates } = useUpdater();
+
+onMounted(() => {
+  if (!import.meta.dev) {
+    setTimeout(() => checkForUpdates(), 5_000);
+  }
+});
 
 const activeSessionCount = computed(
   () =>

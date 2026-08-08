@@ -1,12 +1,39 @@
 <script setup lang="ts">
+import { DownloadIcon, RefreshCwIcon } from '@lucide/vue';
 import pkg from '../../package.json';
 
 const appVersion = pkg.version;
+const { checking, installing, progress, pendingUpdate, checkForUpdates, installUpdate } =
+  useUpdater();
 </script>
 
 <template>
   <div class="flex flex-col gap-5">
-    <span class="text-muted-foreground text-sm">v{{ appVersion }}</span>
+    <div class="flex items-center gap-3">
+      <span class="text-muted-foreground text-sm">v{{ appVersion }}</span>
+      <Button
+        v-if="pendingUpdate"
+        size="sm"
+        variant="outline"
+        class="h-7"
+        :disabled="installing"
+        @click="installUpdate"
+      >
+        <DownloadIcon class="size-3.5" />
+        {{ installing ? `Installing… ${progress}%` : `Install v${pendingUpdate.version}` }}
+      </Button>
+      <Button
+        v-else
+        size="sm"
+        variant="outline"
+        class="h-7"
+        :disabled="checking"
+        @click="checkForUpdates(true)"
+      >
+        <RefreshCwIcon class="size-3.5" :class="{ 'animate-spin': checking }" />
+        {{ checking ? 'Checking…' : 'Check for updates' }}
+      </Button>
+    </div>
 
     <p class="text-muted-foreground text-sm leading-relaxed">
       A fast, modern SSH client and terminal emulator built with Tauri, xterm.js, and Rust. Manage

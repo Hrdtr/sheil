@@ -37,6 +37,8 @@ pub fn run() {
     std::env::set_var("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
@@ -68,8 +70,7 @@ pub fn run() {
             app.manage(fwd_state);
 
             let models_dir = app_data_dir.join("hf-models");
-            let ai_state =
-                AiState::new(models_dir).expect("failed to initialize AI state");
+            let ai_state = AiState::new(models_dir).expect("failed to initialize AI state");
             app.manage(ai_state);
 
             Ok(())

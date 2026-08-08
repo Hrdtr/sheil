@@ -944,7 +944,7 @@ mod tests {
         assert_eq!(reply[1], 0x00); // reply code
         assert_eq!(reply[2], 0x00); // reserved
         assert_eq!(reply[3], 0x01); // IPv4 address type
-        // BND.ADDR = 0.0.0.0
+                                    // BND.ADDR = 0.0.0.0
         assert_eq!(&reply[4..8], &[0, 0, 0, 0]);
         // BND.PORT = 0
         assert_eq!(&reply[8..10], &[0, 0]);
