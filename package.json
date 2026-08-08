@@ -5,8 +5,7 @@
   "description": "Open-source, cross-platform tool for managing remote and device connections",
   "type": "module",
   "scripts": {
-    "build": "nuxt generate",
-    "dev": "nuxt dev",
+    "dev": "tauri dev --config tauri/tauri.development.conf.json",
     "postinstall": "nuxt prepare",
     "tauri": "tauri",
     "fmt": "oxfmt",
