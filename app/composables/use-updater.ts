@@ -16,7 +16,7 @@ function _useUpdater() {
       const update = await check();
       lastChecked.value = new Date();
       if (update) {
-        pendingUpdate.value = update;
+        pendingUpdate.value = markRaw(update);
         toast.info(`Sheil v${update.version} is available`, {
           description: 'Download and install it now?',
           duration: 10_000,
