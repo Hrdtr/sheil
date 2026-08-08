@@ -2,13 +2,13 @@
 
 ## Supported Versions
 
-Sheil is in active pre-MVP development (Phase 0). Once a stable release is
-published, version support will follow Semantic Versioning.
+Only the latest release receives security fixes. Always update to the newest
+version before reporting a vulnerability.
 
-| Phase    | Supported                          |
-| -------- | ---------------------------------- |
-| Phase 0  | :white_check_mark:                 |
-| Phase 1+ | :white_check_mark: (once released) |
+| Version        | Supported          |
+| -------------- | ------------------ |
+| Latest release | :white_check_mark: |
+| Older releases | :x:                |
 
 ## Reporting a Vulnerability
 
