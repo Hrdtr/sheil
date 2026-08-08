@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import type { SidebarProps } from '@/components/ui/sidebar';
-import { EllipsisVerticalIcon, EditIcon, PlusIcon, SearchIcon, TrashIcon } from '@lucide/vue';
+import {
+  EllipsisVerticalIcon,
+  EditIcon,
+  MonitorIcon,
+  PlusIcon,
+  SearchIcon,
+  TrashIcon,
+} from '@lucide/vue';
 import { SettingsIcon } from '@lucide/vue';
 
 const props = withDefaults(defineProps<SidebarProps>(), {
@@ -19,9 +26,9 @@ const openQuickConnectDialog = inject<() => void>('openQuickConnectDialog');
     <Sidebar v-bind="props" data-tauri-drag-region class="p-0">
       <SidebarHeader class="pt-[calc(--spacing(2)+1px)] md:pt-3" data-tauri-drag-region>
         <SidebarGroup data-tauri-drag-region>
-          <SidebarGroupContent class="flex flex-row items-center gap-2">
-            <div class="relative flex-1"></div>
-            <div class="shrink-0 flex flex-row items-center gap-0.5">
+          <SidebarGroupContent class="flex flex-row items-center gap-2" data-tauri-drag-region>
+            <div class="relative flex-1" data-tauri-drag-region></div>
+            <div class="shrink-0 flex flex-row items-center gap-0.5" data-tauri-drag-region>
               <Button
                 variant="secondary"
                 size="icon-sm"
@@ -43,7 +50,25 @@ const openQuickConnectDialog = inject<() => void>('openQuickConnectDialog');
         </SidebarGroup>
       </SidebarHeader>
       <SidebarContent data-tauri-drag-region>
-        <div data-tauri-drag-region>
+        <div
+          v-if="groupedHosts.length === 0"
+          class="flex flex-col justify-center gap-2 px-6 py-8"
+          data-tauri-drag-region
+        >
+          <div class="space-y-1" data-tauri-drag-region>
+            <p class="text-sm font-medium" data-tauri-drag-region>Add your first host</p>
+            <p class="text-xs text-muted-foreground leading-normal" data-tauri-drag-region>
+              Save SSH connections to quickly access your servers
+            </p>
+          </div>
+          <div data-tauri-drag-region>
+            <Button variant="outline" size="sm" class="mt-1" @click="createHost">
+              <PlusIcon class="size-3.5" />
+              Add Host
+            </Button>
+          </div>
+        </div>
+        <div v-else data-tauri-drag-region>
           <SidebarGroup
             v-for="[groupName, groupHosts] in groupedHosts"
             :key="groupName"
@@ -104,7 +129,7 @@ const openQuickConnectDialog = inject<() => void>('openQuickConnectDialog');
         </div>
       </SidebarContent>
       <SidebarFooter data-tauri-drag-region class="pb-[calc(--spacing(2)+1px)] md:pb-2">
-        <div class="flex items-center gap-0.5 p-2">
+        <div class="flex items-center gap-0.5 p-2" data-tauri-drag-region>
           <Button
             variant="ghost"
             size="sm"
@@ -112,7 +137,6 @@ const openQuickConnectDialog = inject<() => void>('openQuickConnectDialog');
             @click="openSettings"
           >
             <span>Settings</span>
-            <SettingsIcon class="ml-auto size-4" />
           </Button>
           <ColorModeToggle variant="secondary" size="icon-sm" class="rounded-lg" />
         </div>

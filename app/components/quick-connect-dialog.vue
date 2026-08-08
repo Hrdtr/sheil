@@ -82,6 +82,10 @@ const directMatch = computed(() => {
   return parseInput(commandInputSearch.value);
 });
 
+const showEmptyStateHelp = computed(() => {
+  return commandInputSearch.value.trim() === '' && groupedHosts.value.length === 0;
+});
+
 function handleDirectConnect() {
   const d = directMatch.value;
   if (!d) return;
@@ -123,6 +127,14 @@ async function doConnect() {
   >
     <CommandInput ref="commandInput" placeholder="Search hosts or type user@host…" />
     <CommandList>
+      <div v-if="showEmptyStateHelp" class="p-4 pt-2">
+        <p class="text-sm">You haven't saved any hosts yet</p>
+        <p class="mt-1 text-xs text-muted-foreground">
+          Connect to a host using an address like
+          <code class="rounded bg-muted px-1.5 py-0.5">hrdtr@127.0.0.1</code>
+        </p>
+      </div>
+
       <CommandEmpty>
         <template v-if="directMatch">
           Press Enter to connect to
