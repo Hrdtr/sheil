@@ -9,13 +9,13 @@ const { checking, installing, progress, pendingUpdate, checkForUpdates, installU
 
 <template>
   <div class="flex flex-col gap-5">
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2">
       <span class="text-muted-foreground text-sm">v{{ appVersion }}</span>
       <Button
         v-if="pendingUpdate"
         size="sm"
-        variant="outline"
-        class="h-7"
+        variant="link"
+        class="p-0 font-normal"
         :disabled="installing"
         @click="installUpdate"
       >
@@ -25,8 +25,8 @@ const { checking, installing, progress, pendingUpdate, checkForUpdates, installU
       <Button
         v-else
         size="sm"
-        variant="outline"
-        class="h-7"
+        variant="link"
+        class="p-0 font-normal"
         :disabled="checking"
         @click="checkForUpdates(true)"
       >
