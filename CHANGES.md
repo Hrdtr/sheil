@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.2 (2026-08-08)
+
+### Bug Fixes
+
+- **ui:** update onboarding text and spacing in app root (9831d25)
+- **ui:** enhance user onboarding and desktop usability (c8eafd6)
+
+### Documentation
+
+- update security policy supported versions (25580fb)
+- restructure readme content for better clarity (db15110)
+
 ## v0.1.1 (2026-08-08)
 
 ### Features
