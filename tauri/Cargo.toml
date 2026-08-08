@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "1.0.0"
+version = "0.1.0"
 description = "Sheil — An open-source, cross-platform tool for managing remote and device connections"
 authors = ["Sheil Contributors"]
 license = "GPL-3.0"

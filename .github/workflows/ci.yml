@@ -105,80 +105,80 @@ jobs:
       - name: Build
         run: pnpm exec tauri build
 
-  build-android:
-    needs: check
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7
+  # build-android:
+  #   needs: check
+  #   runs-on: ubuntu-24.04
+  #   steps:
+  #     - uses: actions/checkout@v7
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          cache: true
+  #     - name: Setup pnpm
+  #       uses: pnpm/action-setup@v6
+  #       with:
+  #         cache: true
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          cache: 'pnpm'
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v6
+  #       with:
+  #         cache: 'pnpm'
 
-      - name: Install frontend dependencies
-        run: pnpm ci
+  #     - name: Install frontend dependencies
+  #       run: pnpm ci
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+  #     - name: Install Rust stable
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
 
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './tauri -> target'
+  #     - name: Rust cache
+  #       uses: swatinem/rust-cache@v2
+  #       with:
+  #         workspaces: './tauri -> target'
 
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
+  #     - name: Setup Java
+  #       uses: actions/setup-java@v5
+  #       with:
+  #         distribution: temurin
+  #         java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
+  #     - name: Setup Android SDK
+  #       uses: android-actions/setup-android@v4
 
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libudev-dev
+  #     - name: Install Linux dependencies
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libudev-dev
 
-      - name: Build
-        run: pnpm exec tauri android build
+  #     - name: Build
+  #       run: pnpm exec tauri android build
 
-  build-ios:
-    needs: check
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v7
+  # build-ios:
+  #   needs: check
+  #   runs-on: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v7
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          cache: true
+  #     - name: Setup pnpm
+  #       uses: pnpm/action-setup@v6
+  #       with:
+  #         cache: true
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          cache: 'pnpm'
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v6
+  #       with:
+  #         cache: 'pnpm'
 
-      - name: Install frontend dependencies
-        run: pnpm ci
+  #     - name: Install frontend dependencies
+  #       run: pnpm ci
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-ios,aarch64-apple-ios-sim
+  #     - name: Install Rust stable
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         targets: aarch64-apple-ios,aarch64-apple-ios-sim
 
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './tauri -> target'
+  #     - name: Rust cache
+  #       uses: swatinem/rust-cache@v2
+  #       with:
+  #         workspaces: './tauri -> target'
 
-      - name: Build
-        run: pnpm exec tauri ios build
+  #     - name: Build
+  #       run: pnpm exec tauri ios build

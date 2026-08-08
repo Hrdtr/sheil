@@ -18,12 +18,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: macos-latest
+          - platform: macos-latest # for Arm based macs (M1 and above).
             args: --target aarch64-apple-darwin
-          - platform: macos-latest
+          - platform: macos-latest # for Intel based macs.
             args: --target x86_64-apple-darwin
           - platform: ubuntu-24.04
             args: --target x86_64-unknown-linux-gnu
+          - platform: ubuntu-24.04-arm # Only available in public repos.
+            args: --target aarch64-unknown-linux-gnu
           - platform: windows-latest
             args: ''
 
@@ -39,6 +41,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
+          node-version: 24
           cache: 'pnpm'
 
       - name: Install frontend dependencies
@@ -55,15 +58,45 @@ jobs:
           workspaces: './tauri -> target'
 
       - name: Install Linux dependencies
-        if: matrix.platform == 'ubuntu-24.04'
+        if: matrix.platform == 'ubuntu-24.04' || matrix.platform == 'ubuntu-24.04-arm'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libudev-dev
+
+      - name: Import Apple Developer Certificate
+        if: matrix.platform == 'macos-latest'
+        env:
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          echo $APPLE_CERTIFICATE | base64 --decode > certificate.p12
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          security find-identity -v -p codesigning build.keychain
+
+      - name: Verify certificate
+        if: matrix.platform == 'macos-latest'
+        run: |
+          CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application")
+          CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
+          echo "CERT_ID=$CERT_ID" >> $GITHUB_ENV
+          echo "Certificate imported."
 
       - name: Build and publish
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ env.CERT_ID }}
         with:
           projectPath: tauri
           tauriScript: pnpm exec tauri
@@ -74,110 +107,110 @@ jobs:
           prerelease: false
           args: ${{ matrix.args }}
 
-  publish-android:
-    permissions:
-      contents: write
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7
+  # publish-android:
+  #   permissions:
+  #     contents: write
+  #   runs-on: ubuntu-24.04
+  #   steps:
+  #     - uses: actions/checkout@v7
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          cache: true
+  #     - name: Setup pnpm
+  #       uses: pnpm/action-setup@v6
+  #       with:
+  #         cache: true
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          cache: 'pnpm'
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v6
+  #       with:
+  #         cache: 'pnpm'
 
-      - name: Install frontend dependencies
-        run: pnpm ci
+  #     - name: Install frontend dependencies
+  #       run: pnpm ci
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+  #     - name: Install Rust stable
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
 
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './tauri -> target'
+  #     - name: Rust cache
+  #       uses: swatinem/rust-cache@v2
+  #       with:
+  #         workspaces: './tauri -> target'
 
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
+  #     - name: Setup Java
+  #       uses: actions/setup-java@v5
+  #       with:
+  #         distribution: temurin
+  #         java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
+  #     - name: Setup Android SDK
+  #       uses: android-actions/setup-android@v4
 
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libudev-dev
+  #     - name: Install Linux dependencies
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libudev-dev
 
-      - name: Init Android project
-        run: pnpm exec tauri android init
+  #     - name: Init Android project
+  #       run: pnpm exec tauri android init
 
-      - name: Build and publish Android
-        uses: tauri-apps/tauri-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          projectPath: tauri
-          tauriScript: pnpm exec tauri
-          mobile: android
-          tagName: v__VERSION__
-          releaseName: 'v__VERSION__'
-          releaseBody: 'See [CHANGES.md](https://github.com/Hrdtr/sheil/blob/main/CHANGES.md) for a complete list of changes.'
-          releaseDraft: true
-          prerelease: false
+  #     - name: Build and publish Android
+  #       uses: tauri-apps/tauri-action@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         projectPath: tauri
+  #         tauriScript: pnpm exec tauri
+  #         mobile: android
+  #         tagName: v__VERSION__
+  #         releaseName: 'v__VERSION__'
+  #         releaseBody: 'See [CHANGES.md](https://github.com/Hrdtr/sheil/blob/main/CHANGES.md) for a complete list of changes.'
+  #         releaseDraft: true
+  #         prerelease: false
 
-  publish-ios:
-    permissions:
-      contents: write
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v7
+  # publish-ios:
+  #   permissions:
+  #     contents: write
+  #   runs-on: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v7
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          cache: true
+  #     - name: Setup pnpm
+  #       uses: pnpm/action-setup@v6
+  #       with:
+  #         cache: true
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          cache: 'pnpm'
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v6
+  #       with:
+  #         cache: 'pnpm'
 
-      - name: Install frontend dependencies
-        run: pnpm ci
+  #     - name: Install frontend dependencies
+  #       run: pnpm ci
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-ios,aarch64-apple-ios-sim
+  #     - name: Install Rust stable
+  #       uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         targets: aarch64-apple-ios,aarch64-apple-ios-sim
 
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './tauri -> target'
+  #     - name: Rust cache
+  #       uses: swatinem/rust-cache@v2
+  #       with:
+  #         workspaces: './tauri -> target'
 
-      - name: Init iOS project
-        run: pnpm exec tauri ios init
+  #     - name: Init iOS project
+  #       run: pnpm exec tauri ios init
 
-      - name: Build and publish iOS
-        uses: tauri-apps/tauri-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          projectPath: tauri
-          tauriScript: pnpm exec tauri
-          mobile: ios
-          tagName: v__VERSION__
-          releaseName: 'v__VERSION__'
-          releaseBody: 'See [CHANGES.md](https://github.com/Hrdtr/sheil/blob/main/CHANGES.md) for a complete list of changes.'
-          releaseDraft: true
-          prerelease: false
+  #     - name: Build and publish iOS
+  #       uses: tauri-apps/tauri-action@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         projectPath: tauri
+  #         tauriScript: pnpm exec tauri
+  #         mobile: ios
+  #         tagName: v__VERSION__
+  #         releaseName: 'v__VERSION__'
+  #         releaseBody: 'See [CHANGES.md](https://github.com/Hrdtr/sheil/blob/main/CHANGES.md) for a complete list of changes.'
+  #         releaseDraft: true
+  #         prerelease: false

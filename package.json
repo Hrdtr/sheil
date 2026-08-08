@@ -1,6 +1,6 @@
 {
   "name": "sheil",
-  "version": "1.0.0-beta.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Open-source, cross-platform tool for managing remote and device connections",
   "type": "module",
@@ -21,6 +21,7 @@
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
+    "@clack/prompts": "^1.7.0",
     "@commitlint/config-conventional": "^21.2.0",
     "@commitlint/types": "^21.2.0",
     "@lucide/vue": "^1.29.0",
@@ -32,6 +33,7 @@
     "@tauri-apps/plugin-dialog": "~2.7.2",
     "@tauri-apps/plugin-fs": "~2.5.1",
     "@tauri-apps/plugin-os": "~2.3.2",
+    "@types/node": "^26.1.2",
     "@vueuse/core": "^14.4.0",
     "@vueuse/nuxt": "^14.4.0",
     "@xterm/addon-fit": "^0.11.0",
