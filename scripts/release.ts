@@ -379,6 +379,7 @@ async function main(): Promise<void> {
     if (section) {
       s.start('Updating CHANGES.md');
       writeChangelog(section);
+      run('pnpm', ['fmt', 'CHANGES.md']);
       s.stop('Updated CHANGES.md');
     } else {
       p.log.warn('No conventional commits found since the last tag; skipping CHANGES.md.');
