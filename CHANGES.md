@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.3 (2026-08-09)
+
+### Bug Fixes
+
+- **updater:** prevent reactive proxy from breaking update install (ac623b9)
+
 ## v0.1.2 (2026-08-08)
 
 ### Bug Fixes
