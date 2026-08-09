@@ -1,0 +1,1160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sheil — SSH client with local AI</title>
+    <meta
+      name="description"
+      content="Open-source, cross-platform tool for managing remote and device connections with an embedded local AI engine for command generation and auto-completion."
+    />
+    <link rel="icon" type="image/png" href="icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0a0a0a;
+        --surface: #171717;
+        --border: rgba(255, 255, 255, 0.1);
+        --text: #fafafa;
+        --muted: #a3a3a3;
+        --accent: #e5e5e5;
+        --accent-text: #171717;
+        --hover: #262626;
+        --spotlight: rgba(255, 255, 255, 0.07);
+      }
+      [data-theme='light'] {
+        --bg: #ffffff;
+        --surface: #fafafa;
+        --border: #e5e5e5;
+        --text: #0a0a0a;
+        --muted: #737373;
+        --accent: #171717;
+        --accent-text: #fafafa;
+        --hover: #f5f5f5;
+        --spotlight: rgba(0, 0, 0, 0.04);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family:
+          'Geist',
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      .container {
+        max-width: 1024px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: color-mix(in srgb, var(--bg) 85%, transparent);
+        backdrop-filter: blur(8px);
+      }
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        height: 56px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--text);
+        text-decoration: none;
+      }
+      .brand img {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+      }
+      .nav-links {
+        display: flex;
+        gap: 4px;
+        margin-left: auto;
+      }
+      .nav-links a {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 6px 10px;
+        border-radius: 8px;
+      }
+      .nav-links a:hover {
+        color: var(--text);
+        background: var(--hover);
+      }
+      @media (max-width: 639px) {
+        .nav-links {
+          display: none;
+        }
+        #theme-toggle {
+          margin-left: auto;
+        }
+      }
+      #theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      #theme-toggle:hover {
+        color: var(--text);
+        background: var(--hover);
+      }
+      #theme-toggle svg {
+        width: 16px;
+        height: 16px;
+      }
+      #theme-toggle .icon-moon {
+        display: none;
+      }
+      [data-theme='light'] #theme-toggle .icon-sun {
+        display: none;
+      }
+      [data-theme='light'] #theme-toggle .icon-moon {
+        display: block;
+      }
+
+      .hero {
+        padding: 96px 0 64px;
+        text-align: center;
+      }
+      .hero-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        margin-bottom: 24px;
+      }
+      h1 {
+        font-size: 44px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+      }
+      .tagline {
+        color: var(--muted);
+        font-size: 18px;
+        max-width: 560px;
+        margin: 16px auto 32px;
+      }
+      .hero-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 36px;
+        padding: 0 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1px solid var(--border);
+        color: var(--text);
+        transition:
+          background 0.15s ease,
+          color 0.15s ease,
+          opacity 0.15s ease;
+      }
+      .btn:hover {
+        background: var(--hover);
+      }
+      .btn-primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-text);
+      }
+      .btn-primary:hover {
+        opacity: 0.8;
+        background: var(--accent);
+      }
+
+      section {
+        padding: 48px 0;
+      }
+      h2 {
+        font-size: 24px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        margin-bottom: 24px;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        list-style: none;
+      }
+      @media (min-width: 640px) {
+        .features {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .features .ai-highlight {
+          grid-column: span 2;
+        }
+      }
+      @media (min-width: 1024px) {
+        .features {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .features .ai-highlight {
+          grid-column: span 2;
+        }
+      }
+      .features li {
+        position: relative;
+        overflow: hidden;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 24px;
+        transition: border-color 0.3s ease;
+      }
+      .features li:hover {
+        border-color: color-mix(in srgb, var(--muted) 50%, var(--border));
+      }
+      .features li::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          280px circle at var(--mx, 50%) var(--my, 50%),
+          var(--spotlight),
+          transparent 70%
+        );
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+      }
+      .features li:hover::before {
+        opacity: 1;
+      }
+      .feature-icon {
+        color: var(--muted);
+        margin-bottom: 16px;
+      }
+      .feature-icon svg {
+        width: 20px;
+        height: 20px;
+      }
+      .features h3 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .features p {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .ai-highlight {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+        align-items: center;
+      }
+      .ai-highlight h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .ai-highlight p {
+        font-size: 15px;
+        color: var(--muted);
+      }
+      .ai-highlight .terminal-demo {
+        margin: 0;
+      }
+      @media (max-width: 720px) {
+        .ai-highlight {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+      }
+      .terminal-demo {
+        margin-top: 24px;
+        margin-left: -1px;
+        margin-right: -1px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+        line-height: 1.8;
+      }
+      .terminal-demo .prompt {
+        color: var(--muted);
+      }
+      .terminal-demo .ghost {
+        color: var(--muted);
+        opacity: 0.55;
+      }
+      .terminal-demo .caret {
+        display: inline-block;
+        width: 7px;
+        height: 14px;
+        background: var(--muted);
+        vertical-align: -2px;
+        margin-left: 2px;
+        animation: blink 1.2s steps(2) infinite;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      section#screenshots {
+        padding-bottom: 16px;
+      }
+      .shots-carousel {
+        display: flex;
+        gap: 0px;
+        overflow-x: auto;
+        padding: 4px max(24px, calc((100vw - 1024px) / 2 + 24px));
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+      }
+      .shots-carousel::-webkit-scrollbar {
+        display: none;
+      }
+      .shots-carousel img {
+        flex-shrink: 0;
+        margin-left: -2.85%;
+        margin-top: -10px;
+        height: clamp(260px, 40vw, 440px);
+        width: auto;
+        scroll-snap-align: center;
+        cursor: zoom-in;
+        overflow: hidden;
+      }
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+        padding: 24px;
+        cursor: zoom-out;
+      }
+      .lightbox[hidden] {
+        display: none;
+      }
+      .lightbox img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 14px;
+      }
+
+      .release-tag {
+        display: inline-block;
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--muted);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 2px 10px;
+        margin-left: 10px;
+        vertical-align: middle;
+        text-decoration: none;
+      }
+      .release-tag:hover {
+        color: var(--text);
+      }
+      .dl-tabs {
+        display: inline-flex;
+        gap: 4px;
+        background: var(--hover);
+        border-radius: 10px;
+        padding: 4px;
+        margin-bottom: 16px;
+      }
+      .dl-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 6px 16px;
+        border-radius: 7px;
+        cursor: pointer;
+        transition:
+          background 0.15s ease,
+          color 0.15s ease;
+      }
+      .dl-tab svg {
+        width: 15px;
+        height: 15px;
+      }
+      .dl-tab:hover {
+        color: var(--text);
+      }
+      .dl-tab.active {
+        background: var(--bg);
+        color: var(--text);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+      }
+      .dl-panel {
+        display: none;
+      }
+      .dl-panel.active {
+        display: block;
+      }
+      .dl-group + .dl-group {
+        margin-top: 20px;
+      }
+      .dl-group-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .dl-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+      }
+      .dl-option {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        text-decoration: none;
+        color: var(--text);
+        background: var(--surface);
+        transition:
+          background 0.15s ease,
+          border-color 0.15s ease;
+      }
+      .dl-option:hover {
+        /* background: var(--hover); */
+      }
+      .dl-option::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          180px circle at var(--mx, 50%) var(--my, 50%),
+          var(--spotlight),
+          transparent 70%
+        );
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+      }
+      .dl-option:hover::before {
+        opacity: 1;
+      }
+      .dl-option-title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .dl-option-sub {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      a.pending {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+
+      section#donate {
+        padding-bottom: 16px;
+      }
+      .donate {
+        text-align: left;
+      }
+      .donate p {
+        font-size: 15px;
+        color: var(--muted);
+        max-width: 480px;
+        margin: 0 0 24px;
+      }
+      .donate .btn {
+        gap: 8px;
+      }
+      .donate .btn svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      footer {
+        padding: 32px 0;
+        margin-top: 48px;
+      }
+      .footer-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .footer-inner a {
+        color: var(--muted);
+        text-decoration: none;
+      }
+      .footer-inner a:hover {
+        color: var(--text);
+      }
+      .footer-links {
+        display: flex;
+        gap: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="container nav">
+        <a class="brand" href="#"><img src="icon.png" alt="Sheil icon" />Sheil</a>
+        <nav class="nav-links">
+          <a href="#features">Features</a>
+          <a href="#screenshots">Screenshots</a>
+          <a href="#download">Download</a>
+        </nav>
+        <button id="theme-toggle" aria-label="Toggle theme">
+          <svg
+            class="icon-sun"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2" />
+            <path d="M12 20v2" />
+            <path d="m4.93 4.93 1.41 1.41" />
+            <path d="m17.66 17.66 1.41 1.41" />
+            <path d="M2 12h2" />
+            <path d="M20 12h2" />
+            <path d="m6.34 17.66-1.41 1.41" />
+            <path d="m19.07 4.93-1.41 1.41" />
+          </svg>
+          <svg
+            class="icon-moon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <div class="container hero">
+        <img class="hero-icon" src="icon.png" alt="Sheil" />
+        <h1>Sheil</h1>
+        <p class="tagline">
+          Open-source, cross-platform SSH client with an embedded local AI engine for command
+          generation and auto-completion.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#download">Download</a>
+          <a class="btn" href="https://github.com/Hrdtr/sheil">GitHub</a>
+        </div>
+      </div>
+
+      <section id="features">
+        <div class="container">
+          <h2>Features</h2>
+          <ul class="features">
+            <li>
+              <div class="feature-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect width="20" height="8" x="2" y="2" rx="2" ry="2" />
+                  <rect width="20" height="8" x="2" y="14" rx="2" ry="2" />
+                  <line x1="6" x2="6.01" y1="6" y2="6" />
+                  <line x1="6" x2="6.01" y1="18" y2="18" />
+                </svg>
+              </div>
+              <h3>Connection management</h3>
+              <p>
+                Secure connections with key and password authentication, organized with groups and
+                tags.
+              </p>
+            </li>
+            <li>
+              <div class="feature-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect width="20" height="16" x="2" y="4" rx="2" />
+                  <path d="M10 4v4" />
+                  <path d="M2 8h20" />
+                  <path d="M6 4v4" />
+                </svg>
+              </div>
+              <h3>Tab-based sessions</h3>
+              <p>Every tab is an active session with real-time state management.</p>
+            </li>
+            <li>
+              <div class="feature-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
+                  />
+                </svg>
+              </div>
+              <h3>SFTP file browser</h3>
+              <p>Integrated file management with drag-and-drop upload and download.</p>
+            </li>
+            <li>
+              <div class="feature-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m16 3 4 4-4 4" />
+                  <path d="M20 7H4" />
+                  <path d="m8 21-4-4 4-4" />
+                  <path d="M4 17h16" />
+                </svg>
+              </div>
+              <h3>Port forwarding</h3>
+              <p>Local, remote, and dynamic (SOCKS) port forwarding built in.</p>
+            </li>
+            <li>
+              <div class="feature-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </div>
+              <h3>Encrypted credentials</h3>
+              <p>Passwords and SSH keys encrypted at rest with AES-256-GCM.</p>
+            </li>
+            <li>
+              <div class="feature-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"
+                  />
+                  <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" />
+                </svg>
+              </div>
+              <h3>SSH key management</h3>
+              <p>Import, store, and manage SSH keys with passphrase support.</p>
+            </li>
+            <li class="ai-highlight">
+              <div>
+                <div class="feature-icon">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"
+                    />
+                    <path d="M20 3v4" />
+                    <path d="M22 5h-4" />
+                    <path d="M4 17v2" />
+                    <path d="M5 18H3" />
+                  </svg>
+                </div>
+                <h3>Local AI engine</h3>
+                <p>
+                  Embedded llama.cpp generates terminal commands and provides ghost-text completion
+                  — fully offline.
+                </p>
+              </div>
+              <div class="terminal-demo">
+                <div>
+                  <span class="prompt">❯</span> git push
+                  <span class="ghost">--follow-tags origin main</span><span class="caret"></span>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="screenshots">
+        <div class="container">
+          <h2>Screenshots</h2>
+        </div>
+        <div class="shots-carousel">
+          <img
+            data-dark="screenshots/home-dark.png"
+            data-light="screenshots/home-light.png"
+            src="screenshots/home-dark.png"
+            alt="Home screen"
+            loading="lazy"
+          />
+          <img
+            data-dark="screenshots/session-ssh-terminal-dark.png"
+            data-light="screenshots/session-ssh-terminal-light.png"
+            src="screenshots/session-ssh-terminal-dark.png"
+            alt="SSH terminal session"
+            loading="lazy"
+          />
+          <img
+            data-dark="screenshots/quick-connect-dark.png"
+            data-light="screenshots/quick-connect-light.png"
+            src="screenshots/quick-connect-dark.png"
+            alt="Quick connect dialog"
+            loading="lazy"
+          />
+          <img
+            data-dark="screenshots/session-full-panel-dark.png"
+            data-light="screenshots/session-full-panel-light.png"
+            src="screenshots/session-full-panel-dark.png"
+            alt="Session with full panel"
+            loading="lazy"
+          />
+          <img
+            data-dark="screenshots/settings-dark.png"
+            data-light="screenshots/settings-light.png"
+            src="screenshots/settings-dark.png"
+            alt="Settings"
+            loading="lazy"
+          />
+        </div>
+      </section>
+
+      <div class="lightbox" id="lightbox" hidden>
+        <img src="" alt="" />
+      </div>
+
+      <section id="download">
+        <div class="container">
+          <h2>
+            Download
+            <a class="release-tag" id="release-tag" href="https://github.com/Hrdtr/sheil/releases"
+              >latest</a
+            >
+          </h2>
+          <div class="dl-tabs" role="tablist">
+            <button class="dl-tab active" data-tab="macos" role="tab">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"
+                />
+              </svg>
+              macOS
+            </button>
+            <button class="dl-tab" data-tab="windows" role="tab">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M0,3.449L9.75,2.1v9.427H0V3.449z M10.949,1.949L24,0v11.4H10.949V1.949z M0,12.6h9.75v9.427L0,20.699V12.6z M10.949,12.6H24V24l-12.9-1.801V12.6z"
+                />
+              </svg>
+              Windows
+            </button>
+            <button class="dl-tab" data-tab="linux" role="tab">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m4 17 6-6-6-6" />
+                <path d="M12 19h8" />
+              </svg>
+              Linux
+            </button>
+          </div>
+          <div class="dl-panel active" data-panel="macos">
+            <div class="dl-options">
+              <a
+                class="dl-option pending"
+                data-match="_aarch64.dmg"
+                href="https://github.com/Hrdtr/sheil/releases"
+              >
+                <span class="dl-option-title">Apple Silicon</span>
+                <span class="dl-option-sub">.dmg</span>
+              </a>
+              <a
+                class="dl-option pending"
+                data-match="_x64.dmg"
+                href="https://github.com/Hrdtr/sheil/releases"
+              >
+                <span class="dl-option-title">Intel</span>
+                <span class="dl-option-sub">.dmg</span>
+              </a>
+            </div>
+          </div>
+          <div class="dl-panel" data-panel="windows">
+            <div class="dl-options">
+              <a
+                class="dl-option pending"
+                data-match="_x64-setup.exe"
+                href="https://github.com/Hrdtr/sheil/releases"
+              >
+                <span class="dl-option-title">Installer</span>
+                <span class="dl-option-sub">.exe</span>
+              </a>
+              <a
+                class="dl-option pending"
+                data-match="_x64_en-US.msi"
+                href="https://github.com/Hrdtr/sheil/releases"
+              >
+                <span class="dl-option-title">MSI</span>
+                <span class="dl-option-sub">.msi</span>
+              </a>
+            </div>
+          </div>
+          <div class="dl-panel" data-panel="linux">
+            <div class="dl-group">
+              <div class="dl-group-label">x86_64</div>
+              <div class="dl-options">
+                <a
+                  class="dl-option pending"
+                  data-match="_amd64.AppImage"
+                  href="https://github.com/Hrdtr/sheil/releases"
+                >
+                  <span class="dl-option-title">AppImage</span>
+                  <span class="dl-option-sub">.AppImage</span>
+                </a>
+                <a
+                  class="dl-option pending"
+                  data-match="_amd64.deb"
+                  href="https://github.com/Hrdtr/sheil/releases"
+                >
+                  <span class="dl-option-title">Debian / Ubuntu</span>
+                  <span class="dl-option-sub">.deb</span>
+                </a>
+                <a
+                  class="dl-option pending"
+                  data-match=".x86_64.rpm"
+                  href="https://github.com/Hrdtr/sheil/releases"
+                >
+                  <span class="dl-option-title">Fedora / openSUSE</span>
+                  <span class="dl-option-sub">.rpm</span>
+                </a>
+              </div>
+            </div>
+            <div class="dl-group">
+              <div class="dl-group-label">ARM64</div>
+              <div class="dl-options">
+                <a
+                  class="dl-option pending"
+                  data-match="_aarch64.AppImage"
+                  href="https://github.com/Hrdtr/sheil/releases"
+                >
+                  <span class="dl-option-title">AppImage</span>
+                  <span class="dl-option-sub">.AppImage</span>
+                </a>
+                <a
+                  class="dl-option pending"
+                  data-match="_arm64.deb"
+                  href="https://github.com/Hrdtr/sheil/releases"
+                >
+                  <span class="dl-option-title">Debian / Ubuntu</span>
+                  <span class="dl-option-sub">.deb</span>
+                </a>
+                <a
+                  class="dl-option pending"
+                  data-match=".aarch64.rpm"
+                  href="https://github.com/Hrdtr/sheil/releases"
+                >
+                  <span class="dl-option-title">Fedora / openSUSE</span>
+                  <span class="dl-option-sub">.rpm</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="donate">
+        <div class="container donate">
+          <h2>Support the project</h2>
+          <p>
+            Sheil is free and open-source. If you find it useful, consider sponsoring to keep
+            development going.
+          </p>
+          <a class="btn btn-primary" href="https://github.com/sponsors/Hrdtr">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+              />
+            </svg>
+            Sponsor on GitHub
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container footer-inner">
+        <span>Sheil — GPLv3 licensed</span>
+        <nav class="footer-links">
+          <a href="https://github.com/Hrdtr/sheil">GitHub</a>
+          <a href="https://github.com/Hrdtr/sheil/releases">Releases</a>
+          <a href="https://github.com/Hrdtr/sheil/blob/main/CONTRIBUTING.md">Contributing</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        var toggle = document.getElementById('theme-toggle');
+        var root = document.documentElement;
+        var prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+        var theme = localStorage.getItem('theme') || (prefersLight ? 'light' : 'dark');
+
+        function apply(t) {
+          theme = t;
+          root.setAttribute('data-theme', t);
+          document.querySelectorAll('img[data-dark]').forEach(function (img) {
+            img.src = t === 'dark' ? img.dataset.dark : img.dataset.light;
+          });
+        }
+
+        toggle.addEventListener('click', function () {
+          var next = theme === 'dark' ? 'light' : 'dark';
+          localStorage.setItem('theme', next);
+          apply(next);
+        });
+
+        apply(theme);
+      })();
+
+      (function () {
+        var RELEASES_URL = 'https://github.com/Hrdtr/sheil/releases';
+        var CACHE_KEY = 'release-cache';
+        var CACHE_TTL = 60 * 60 * 1000;
+
+        function readCache(fresh) {
+          try {
+            var cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+            if (cached && cached.data && (!fresh || Date.now() - cached.timestamp < CACHE_TTL)) {
+              return cached.data;
+            }
+          } catch (e) {}
+          return null;
+        }
+
+        function writeCache(data) {
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data: data }));
+          } catch (e) {}
+        }
+
+        function applyRelease(release) {
+          var tag = document.getElementById('release-tag');
+          if (tag) {
+            tag.textContent = release.tag_name;
+            tag.href = release.html_url || RELEASES_URL;
+          }
+          document.querySelectorAll('a[data-match]').forEach(function (link) {
+            var asset = (release.assets || []).find(function (a) {
+              return a.name && a.name.endsWith(link.dataset.match);
+            });
+            if (asset && asset.browser_download_url) {
+              link.href = asset.browser_download_url;
+              link.classList.remove('pending');
+            }
+          });
+        }
+
+        function fallback() {
+          document.querySelectorAll('a[data-match]').forEach(function (link) {
+            link.href = RELEASES_URL;
+            link.classList.remove('pending');
+          });
+        }
+
+        var cached = readCache(true);
+        if (cached) {
+          applyRelease(cached);
+          return;
+        }
+
+        fetch('https://api.github.com/repos/Hrdtr/sheil/releases/latest')
+          .then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+          })
+          .then(function (release) {
+            writeCache(release);
+            applyRelease(release);
+          })
+          .catch(function () {
+            var stale = readCache(false);
+            if (stale) applyRelease(stale);
+            else fallback();
+          });
+      })();
+
+      (function () {
+        var tabs = document.querySelectorAll('.dl-tab');
+        var panels = document.querySelectorAll('.dl-panel');
+
+        function activate(name) {
+          tabs.forEach(function (t) {
+            t.classList.toggle('active', t.dataset.tab === name);
+          });
+          panels.forEach(function (p) {
+            p.classList.toggle('active', p.dataset.panel === name);
+          });
+        }
+
+        tabs.forEach(function (t) {
+          t.addEventListener('click', function () {
+            activate(t.dataset.tab);
+          });
+        });
+
+        var ua = navigator.userAgent;
+        if (/Windows/.test(ua)) activate('windows');
+        else if (/Linux/.test(ua) && !/Android/.test(ua)) activate('linux');
+        else activate('macos');
+      })();
+
+      (function () {
+        var lightbox = document.getElementById('lightbox');
+        var lightboxImg = lightbox.querySelector('img');
+
+        function close() {
+          lightbox.hidden = true;
+          document.body.style.overflow = '';
+        }
+
+        document.querySelectorAll('.shots-carousel img').forEach(function (img) {
+          img.addEventListener('click', function () {
+            lightboxImg.src = img.src;
+            lightboxImg.alt = img.alt;
+            lightbox.hidden = false;
+            document.body.style.overflow = 'hidden';
+          });
+        });
+
+        lightbox.addEventListener('click', close);
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && !lightbox.hidden) close();
+        });
+      })();
+
+      (function () {
+        document.querySelectorAll('.features li, .dl-option').forEach(function (card) {
+          card.addEventListener('mousemove', function (e) {
+            var rect = card.getBoundingClientRect();
+            card.style.setProperty('--mx', e.clientX - rect.left + 'px');
+            card.style.setProperty('--my', e.clientY - rect.top + 'px');
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

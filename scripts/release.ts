@@ -222,6 +222,7 @@ function updateJsonVersion(filePath: string, version: string): void {
   const data = JSON.parse(readFileSync(filePath, 'utf8')) as Record<string, unknown>;
   data.version = version;
   writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`);
+  run('pnpm', ['fmt', filePath]);
 }
 
 function updateCargoVersion(filePath: string, version: string): void {
