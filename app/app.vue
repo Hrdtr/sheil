@@ -396,4 +396,8 @@ textarea,
 .allow-select {
   user-select: text;
 }
+
+li[data-sonner-toast] [data-description] {
+  color: var(--muted-foreground) !important;
+}
 </style>
