@@ -1,5 +1,10 @@
 import type { Terminal } from '@xterm/xterm';
 
+interface TerminalEntry {
+  terminal: Terminal;
+  clear: () => void;
+}
+
 /**
  * Shared registry of live xterm instances keyed by SSH session id.
  *
@@ -8,10 +13,10 @@ import type { Terminal } from '@xterm/xterm';
  * terminal without holding a direct reference to it.
  */
 function _useTerminalFocus() {
-  const terminals = new Map<string, Terminal>();
+  const terminals = new Map<string, TerminalEntry>();
 
-  function register(sessionId: string, terminal: Terminal): void {
-    terminals.set(sessionId, terminal);
+  function register(sessionId: string, entry: TerminalEntry): void {
+    terminals.set(sessionId, entry);
   }
 
   function unregister(sessionId: string): void {
@@ -20,10 +25,15 @@ function _useTerminalFocus() {
 
   function focus(sessionId: string | null | undefined): void {
     if (!sessionId) return;
-    terminals.get(sessionId)?.focus();
+    terminals.get(sessionId)?.terminal.focus();
   }
 
-  return { register, unregister, focus };
+  function clear(sessionId: string | null | undefined): void {
+    if (!sessionId) return;
+    terminals.get(sessionId)?.clear();
+  }
+
+  return { register, unregister, focus, clear };
 }
 
 export const useTerminalFocus = createSharedComposable(_useTerminalFocus);

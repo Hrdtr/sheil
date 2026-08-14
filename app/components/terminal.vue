@@ -136,7 +136,7 @@ watch(
   (sessionId, _prevSessionId, onCleanup) => {
     if (!sessionId) return;
 
-    registerTerminal(sessionId, terminal);
+    registerTerminal(sessionId, { terminal, clear: () => terminal.clear() });
 
     commands.ssh
       .openChannel(sessionId, terminal.cols, terminal.rows)

@@ -18,6 +18,7 @@ const { togglePanel: togglePortForwardingPanel } = usePortForwarding();
 const { togglePanel: toggleSftpPanel } = useSftp();
 const { enabled: aiEnabled, commandPaletteEnabled: aiPaletteEnabled } = useAiSettings();
 const { checkForUpdates } = useUpdater();
+const { clear: clearTerminal } = useTerminalFocus();
 
 onMounted(() => {
   if (!import.meta.dev) {
@@ -154,6 +155,10 @@ defineShortcuts({
       if (!activeSession.value?.sshSessionId) return;
       aiCommandPaletteOpen.value = true;
     },
+    usingInput: true,
+  },
+  'meta_k': {
+    handler: () => clearTerminal(activeSession.value?.sshSessionId),
     usingInput: true,
   },
   'meta_,': {
