@@ -12,8 +12,8 @@ use tokio::sync::Mutex;
 use crate::secrets;
 use crate::MasterKey;
 
-/// Service prefix for SSH key credentials — `dev.hrdtr.sheil.ssh_key.<name>`.
-const SSH_KEY_SERVICE_PREFIX: &str = "dev.hrdtr.sheil.ssh_key.";
+/// Service prefix for SSH key credentials — `sheil.ssh_key.<name>`.
+const SSH_KEY_SERVICE_PREFIX: &str = "sheil.ssh_key.";
 
 fn ssh_key_service(name: &str) -> String {
     let service = format!("{SSH_KEY_SERVICE_PREFIX}{name}");
@@ -779,7 +779,7 @@ mod tests {
 
     #[test]
     fn ssh_key_service_format() {
-        assert_eq!(ssh_key_service("my-key"), "dev.hrdtr.sheil.ssh_key.my-key");
+        assert_eq!(ssh_key_service("my-key"), "sheil.ssh_key.my-key");
     }
 
     #[test]

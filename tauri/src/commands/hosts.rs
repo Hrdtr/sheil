@@ -8,7 +8,7 @@ use tauri::command;
 pub type SharedPool = SqlitePool;
 
 /// Service prefix for host password credentials.
-const HOST_PASSWORD_SERVICE_PREFIX: &str = "sheil.host.";
+const HOST_PASSWORD_SERVICE_PREFIX: &str = "sheil.host_password.";
 
 #[derive(Debug, thiserror::Error)]
 enum HostError {
@@ -667,7 +667,10 @@ mod tests {
 
     #[test]
     fn password_service_is_namespaced() {
-        assert_eq!(host_password_service("host_abc"), "sheil.host.host_abc");
+        assert_eq!(
+            host_password_service("host_abc"),
+            "sheil.host_password.host_abc"
+        );
     }
 
     #[test]

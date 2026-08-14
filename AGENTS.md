@@ -222,9 +222,9 @@ All commits must be DCO signed-off (`git commit -s`).
 
 ### Credential Storage
 
-- Host passwords: service key `sheil.host.<host_id>`
-- SSH key passphrases: service key `dev.hrdtr.sheil.ssh_key.<key_name>.passphrase`
-- SSH private keys: service key `dev.hrdtr.sheil.ssh_key.<key_name>` (encrypted and stored in SQLite)
+- Host passwords: service key `sheil.host_password.<host_id>`
+- SSH key passphrases: service key `sheil.ssh_key.<key_name>.passphrase`
+- SSH private keys: service key `sheil.ssh_key.<key_name>` (encrypted and stored in SQLite)
 - All SQLite credentials encrypted with AES-256-GCM via `secrets::store()` / `secrets::retrieve()`.
 
 ### Frontend Event Handling
