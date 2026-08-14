@@ -1,11 +1,12 @@
 <script lang="ts" setup>
 import type { UnlistenFn } from '@tauri-apps/api/event';
+import { ArrowDownIcon } from '@lucide/vue';
 import { listen } from '@tauri-apps/api/event';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
-import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
+import { Terminal } from '@xterm/xterm';
 
 const props = defineProps<{
   sessionId: string | null;
@@ -92,6 +93,13 @@ terminal.onSelectionChange(() => {
   if (!copyOnSelect.value) return;
   const selection = terminal.getSelection();
   if (selection) navigator.clipboard.writeText(selection).catch(() => {});
+});
+
+const scrolledUp = ref(false);
+
+terminal.onScroll(() => {
+  const buf = terminal.buffer.active;
+  scrolledUp.value = buf.viewportY < buf.baseY;
 });
 
 // Re-apply appearance whenever the settings store changes. xterm.js
@@ -199,6 +207,15 @@ watch(
     :style="{ backgroundColor: colorScheme.theme.background }"
   >
     <div ref="container" class="absolute top-4 left-4 right-4 bottom-4" />
+    <Button
+      v-if="scrolledUp"
+      variant="secondary"
+      size="icon-sm"
+      class="absolute bottom-6 right-6 z-10 rounded-full"
+      @click="terminal.scrollToBottom()"
+    >
+      <ArrowDownIcon />
+    </Button>
     <AiGhostText
       v-if="aiEnabled && aiInlineEnabled"
       :terminal="terminal"
