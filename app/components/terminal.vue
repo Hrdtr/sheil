@@ -1,8 +1,9 @@
 <script lang="ts" setup>
 import type { UnlistenFn } from '@tauri-apps/api/event';
-import { ArrowDownIcon } from '@lucide/vue';
+import { ArrowDownIcon, ChevronDownIcon, ChevronUpIcon, XIcon } from '@lucide/vue';
 import { listen } from '@tauri-apps/api/event';
 import { FitAddon } from '@xterm/addon-fit';
+import { SearchAddon } from '@xterm/addon-search';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
@@ -57,8 +58,10 @@ function onAcceptSuggestion() {
 
 const fitAddon = new FitAddon();
 const webLinksAddon = new WebLinksAddon();
+const searchAddon = new SearchAddon();
 terminal.loadAddon(fitAddon);
 terminal.loadAddon(webLinksAddon);
+terminal.loadAddon(searchAddon);
 
 try {
   terminal.loadAddon(new WebglAddon());
@@ -112,6 +115,52 @@ terminal.onBell(() => {
   setTimeout(() => (bellFlash.value = false), 120);
 });
 
+const searchOpen = ref(false);
+const searchTerm = ref('');
+const hasMatches = ref(false);
+const searchInputRef = useTemplateRef('searchInput');
+
+function openSearch() {
+  if (searchOpen.value) {
+    closeSearch();
+    return;
+  }
+  searchOpen.value = true;
+  nextTick(() => (searchInputRef.value?.$el as HTMLInputElement)?.focus());
+}
+
+function closeSearch() {
+  searchOpen.value = false;
+  searchTerm.value = '';
+  hasMatches.value = false;
+  searchAddon.clearDecorations();
+  focusTerminal(props.sessionId);
+}
+
+function findNext() {
+  if (!searchTerm.value) return;
+  hasMatches.value = searchAddon.findNext(searchTerm.value, {
+    decorations: {
+      matchBackground: colorScheme.value.theme.selectionBackground ?? '#585b70',
+      activeMatchBackground: colorScheme.value.theme.cursor ?? '#f5e0dc',
+      matchOverviewRuler: colorScheme.value.theme.cursor ?? '#f5e0dc',
+      activeMatchColorOverviewRuler: colorScheme.value.theme.cursor ?? '#f5e0dc',
+    },
+  });
+}
+
+function findPrev() {
+  if (!searchTerm.value) return;
+  hasMatches.value = searchAddon.findPrevious(searchTerm.value, {
+    decorations: {
+      matchBackground: colorScheme.value.theme.selectionBackground ?? '#585b70',
+      activeMatchBackground: colorScheme.value.theme.cursor ?? '#f5e0dc',
+      matchOverviewRuler: colorScheme.value.theme.cursor ?? '#f5e0dc',
+      activeMatchColorOverviewRuler: colorScheme.value.theme.cursor ?? '#f5e0dc',
+    },
+  });
+}
+
 // Re-apply appearance whenever the settings store changes. xterm.js
 // supports live updates via the `options` setter without re-mounting.
 watchEffect(() => {
@@ -162,7 +211,11 @@ watch(
   (sessionId, _prevSessionId, onCleanup) => {
     if (!sessionId) return;
 
-    registerTerminal(sessionId, { terminal, clear: () => terminal.clear() });
+    registerTerminal(sessionId, {
+      terminal,
+      clear: () => terminal.clear(),
+      openSearch,
+    });
 
     commands.ssh
       .openChannel(sessionId, terminal.cols, terminal.rows)
@@ -222,6 +275,29 @@ watch(
     :style="{ backgroundColor: colorScheme.theme.background }"
   >
     <div ref="container" class="absolute top-4 left-4 right-4 bottom-4" />
+    <div
+      v-if="searchOpen"
+      class="absolute top-6 right-6 z-20 flex items-center gap-1 rounded-lg border bg-popover p-1 shadow-md"
+    >
+      <Input
+        ref="searchInput"
+        v-model="searchTerm"
+        placeholder="Search..."
+        class="h-7 w-48 text-sm"
+        @keydown.enter.exact="findNext()"
+        @keydown.enter.shift="findPrev()"
+        @keydown.escape="closeSearch()"
+      />
+      <Button variant="ghost" size="icon-xs" :disabled="!hasMatches" @click="findPrev()">
+        <ChevronUpIcon />
+      </Button>
+      <Button variant="ghost" size="icon-xs" :disabled="!hasMatches" @click="findNext()">
+        <ChevronDownIcon />
+      </Button>
+      <Button variant="ghost" size="icon-xs" @click="closeSearch()">
+        <XIcon />
+      </Button>
+    </div>
     <Button
       v-if="scrolledUp"
       variant="secondary"

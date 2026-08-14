@@ -18,7 +18,7 @@ const { togglePanel: togglePortForwardingPanel } = usePortForwarding();
 const { togglePanel: toggleSftpPanel } = useSftp();
 const { enabled: aiEnabled, commandPaletteEnabled: aiPaletteEnabled } = useAiSettings();
 const { checkForUpdates } = useUpdater();
-const { clear: clearTerminal } = useTerminalFocus();
+const { clear: clearTerminal, openSearch: openTerminalSearch } = useTerminalFocus();
 const { fontSize: terminalFontSize, defaultAppearance: terminalDefaultAppearance } =
   useTerminalSettings();
 
@@ -199,6 +199,10 @@ defineShortcuts({
   },
   'meta_k': {
     handler: () => clearTerminal(activeSession.value?.sshSessionId),
+    usingInput: true,
+  },
+  'meta_f': {
+    handler: () => openTerminalSearch(activeSession.value?.sshSessionId),
     usingInput: true,
   },
   'meta_,': {

@@ -3,6 +3,7 @@ import type { Terminal } from '@xterm/xterm';
 interface TerminalEntry {
   terminal: Terminal;
   clear: () => void;
+  openSearch: () => void;
 }
 
 /**
@@ -33,7 +34,12 @@ function _useTerminalFocus() {
     terminals.get(sessionId)?.clear();
   }
 
-  return { register, unregister, focus, clear };
+  function openSearch(sessionId: string | null | undefined): void {
+    if (!sessionId) return;
+    terminals.get(sessionId)?.openSearch();
+  }
+
+  return { register, unregister, focus, clear, openSearch };
 }
 
 export const useTerminalFocus = createSharedComposable(_useTerminalFocus);
