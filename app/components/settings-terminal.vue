@@ -12,6 +12,9 @@ const {
   cursorStyle,
   cursorStyleOptions,
   cursorBlink,
+  minimumContrastRatio,
+  minimumContrastRatioMin,
+  minimumContrastRatioMax,
   copyOnSelect,
   scrollback,
   scrollbackMin,
@@ -113,6 +116,18 @@ const colorSchemes = [
         <Label for="copy-on-select" class="text-sm cursor-pointer">Copy on Select</Label>
       </div>
       <FieldDescription>Copies selected text to the clipboard on release.</FieldDescription>
+    </Field>
+    <Field>
+      <FieldLabel>Minimum Contrast Ratio</FieldLabel>
+      <Input
+        :model-value="String(minimumContrastRatio)"
+        type="number"
+        :min="minimumContrastRatioMin"
+        :max="minimumContrastRatioMax"
+        step="0.5"
+        @update:model-value="minimumContrastRatio = Number($event)"
+      />
+      <FieldDescription>1 = off. Higher values force dim text to be more legible.</FieldDescription>
     </Field>
     <Field>
       <FieldLabel>Scrollback</FieldLabel>

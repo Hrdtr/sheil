@@ -42,6 +42,8 @@ interface Appearance {
   cursorStyle: CursorStyle;
   /** Whether the cursor blinks. */
   cursorBlink: boolean;
+  /** Minimum contrast ratio for foreground colors (1 = off). */
+  minimumContrastRatio: number;
 }
 
 /** Runtime-configurable terminal behavior (non-visual). */
@@ -349,6 +351,7 @@ export function useTerminalSettings() {
     lineHeight: 1.2,
     cursorStyle: 'block',
     cursorBlink: true,
+    minimumContrastRatio: 1,
     fontWeight: 400,
     fontWeightBold: 700,
   };
@@ -458,6 +461,23 @@ export function useTerminalSettings() {
     },
   });
 
+  /** Minimum contrast ratio (1 = off, max 21). */
+  const minimumContrastRatioMin = 1;
+  /** Maximum contrast ratio. */
+  const minimumContrastRatioMax = 21;
+
+  function clampContrastRatio(n: number): number {
+    if (Number.isNaN(n)) return defaultAppearance.minimumContrastRatio;
+    return Math.min(minimumContrastRatioMax, Math.max(minimumContrastRatioMin, n));
+  }
+
+  const minimumContrastRatio = computed({
+    get: () => appearance.value.minimumContrastRatio,
+    set: (value) => {
+      appearance.value = { ...appearance.value, minimumContrastRatio: clampContrastRatio(value) };
+    },
+  });
+
   const copyOnSelect = computed({
     get: () => behavior.value.copyOnSelect,
     set: (value) => {
@@ -502,6 +522,9 @@ export function useTerminalSettings() {
     cursorStyleOptions,
     cursorStyle,
     cursorBlink,
+    minimumContrastRatioMin,
+    minimumContrastRatioMax,
+    minimumContrastRatio,
     copyOnSelect,
     scrollbackMin,
     scrollbackMax,

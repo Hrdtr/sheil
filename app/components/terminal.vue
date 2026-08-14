@@ -15,7 +15,8 @@ const props = defineProps<{
 
 const containerRef = useTemplateRef('container');
 
-const { appearance, behavior, colorScheme, copyOnSelect } = useTerminalSettings();
+const { appearance, behavior, colorScheme, copyOnSelect, minimumContrastRatio } =
+  useTerminalSettings();
 const { panelOpen: sftpPanelOpen } = useSftp();
 const { panelOpen: portForwardingPanelOpen } = usePortForwarding();
 const { enabled: aiEnabled, inlineCompletionEnabled: aiInlineEnabled } = useAiSettings();
@@ -35,6 +36,7 @@ const terminal = new Terminal({
   cursorStyle: appearance.value.cursorStyle,
   cursorBlink: appearance.value.cursorBlink,
   cursorInactiveStyle: 'outline',
+  minimumContrastRatio: appearance.value.minimumContrastRatio,
   scrollback: behavior.value.scrollback,
   allowProposedApi: true,
 });
@@ -120,6 +122,7 @@ watchEffect(() => {
   terminal.options.lineHeight = appearance.value.lineHeight;
   terminal.options.cursorStyle = appearance.value.cursorStyle;
   terminal.options.cursorBlink = appearance.value.cursorBlink;
+  terminal.options.minimumContrastRatio = appearance.value.minimumContrastRatio;
   terminal.options.scrollback = behavior.value.scrollback;
 });
 
