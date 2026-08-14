@@ -3,8 +3,16 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Toaster } from '@/components/ui/sonner';
 import 'vue-sonner/style.css';
 
-const { sessions, activeSession, activeTabId, connect, disconnect, switchTab, setTitle } =
-  useSessions();
+const {
+  sessions,
+  activeSession,
+  activeTabId,
+  connect,
+  focusOrConnect,
+  disconnect,
+  switchTab,
+  setTitle,
+} = useSessions();
 const { recentHosts, clear: clearRecent } = useRecentHosts();
 const {
   confirmCloseEnabled,
@@ -310,7 +318,8 @@ async function reconnect() {
                 :key="host.id"
                 variant="ghost"
                 class="justify-start font-normal h-auto py-2 px-3 -mx-3 rounded-lg"
-                @click="connect(host.id)"
+                @click="focusOrConnect(host.id)"
+                @dblclick="connect(host.id)"
               >
                 <div class="flex flex-col min-w-0 text-left">
                   <span class="text-sm truncate">{{ host.name }}</span>
