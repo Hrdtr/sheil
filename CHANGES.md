@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.5 (2026-08-14)
+
+### Features
+
+- **sessions:** implement single-click focus and double-click connect (8c496b6)
+
 ## v0.1.4 (2026-08-14)
 
 ### Features
