@@ -107,6 +107,11 @@ watchEffect(() => {
   terminal.options.scrollback = behavior.value.scrollback;
 });
 
+watch(
+  () => [appearance.value.fontSize, appearance.value.fontFamily, appearance.value.lineHeight],
+  () => nextTick(() => fitAddon.fit()),
+);
+
 let resizeObserver: ResizeObserver | undefined;
 
 onMounted(() => {

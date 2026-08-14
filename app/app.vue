@@ -19,6 +19,8 @@ const { togglePanel: toggleSftpPanel } = useSftp();
 const { enabled: aiEnabled, commandPaletteEnabled: aiPaletteEnabled } = useAiSettings();
 const { checkForUpdates } = useUpdater();
 const { clear: clearTerminal } = useTerminalFocus();
+const { fontSize: terminalFontSize, defaultAppearance: terminalDefaultAppearance } =
+  useTerminalSettings();
 
 onMounted(() => {
   if (!import.meta.dev) {
@@ -108,21 +110,59 @@ defineShortcuts({
     },
     usingInput: false,
   },
-  'meta_1': () => switchTab(sessions.value[0]?.tabId ?? ''),
-  'meta_2': () => switchTab(sessions.value[1]?.tabId ?? ''),
-  'meta_3': () => switchTab(sessions.value[2]?.tabId ?? ''),
-  'meta_4': () => switchTab(sessions.value[3]?.tabId ?? ''),
-  'meta_5': () => switchTab(sessions.value[4]?.tabId ?? ''),
-  'meta_6': () => switchTab(sessions.value[5]?.tabId ?? ''),
-  'meta_7': () => switchTab(sessions.value[6]?.tabId ?? ''),
-  'meta_8': () => switchTab(sessions.value[7]?.tabId ?? ''),
+  'meta_1': {
+    handler: () => switchTab(sessions.value[0]?.tabId ?? ''),
+    usingInput: true,
+  },
+  'meta_2': {
+    handler: () => switchTab(sessions.value[1]?.tabId ?? ''),
+    usingInput: true,
+  },
+  'meta_3': {
+    handler: () => switchTab(sessions.value[2]?.tabId ?? ''),
+    usingInput: true,
+  },
+  'meta_4': {
+    handler: () => switchTab(sessions.value[3]?.tabId ?? ''),
+    usingInput: true,
+  },
+  'meta_5': {
+    handler: () => switchTab(sessions.value[4]?.tabId ?? ''),
+    usingInput: true,
+  },
+  'meta_6': {
+    handler: () => switchTab(sessions.value[5]?.tabId ?? ''),
+    usingInput: true,
+  },
+  'meta_7': {
+    handler: () => switchTab(sessions.value[6]?.tabId ?? ''),
+    usingInput: true,
+  },
+  'meta_8': {
+    handler: () => switchTab(sessions.value[7]?.tabId ?? ''),
+    usingInput: true,
+  },
   'meta_9': () => {
     const list = sessions.value;
     if (list.length > 0) switchTab(list[list.length - 1]!.tabId);
   },
-  'meta_0': () => {
-    const list = sessions.value;
-    if (list.length > 0) switchTab(list[list.length - 1]!.tabId);
+  'meta_0': {
+    handler: () => {
+      terminalFontSize.value = terminalDefaultAppearance.fontSize;
+    },
+    usingInput: true,
+  },
+  'meta_=': {
+    handler: () => {
+      terminalFontSize.value = terminalFontSize.value + 1;
+    },
+    usingInput: true,
+  },
+  'meta_-': {
+    handler: () => {
+      terminalFontSize.value = terminalFontSize.value - 1;
+    },
+    usingInput: true,
   },
   'meta_w': {
     handler: () => {
@@ -137,13 +177,13 @@ defineShortcuts({
     },
     usingInput: true,
   },
-  'meta_f': {
+  'meta_shift_f': {
     handler: () => {
       togglePortForwardingPanel();
     },
     usingInput: true,
   },
-  'meta_s': {
+  'meta_shift_s': {
     handler: () => {
       toggleSftpPanel();
     },
