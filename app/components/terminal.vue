@@ -14,7 +14,7 @@ const props = defineProps<{
 
 const containerRef = useTemplateRef('container');
 
-const { appearance, colorScheme } = useTerminalSettings();
+const { appearance, behavior, colorScheme, copyOnSelect } = useTerminalSettings();
 const { panelOpen: sftpPanelOpen } = useSftp();
 const { panelOpen: portForwardingPanelOpen } = usePortForwarding();
 const { enabled: aiEnabled, inlineCompletionEnabled: aiInlineEnabled } = useAiSettings();
@@ -33,7 +33,7 @@ const terminal = new Terminal({
   lineHeight: appearance.value.lineHeight,
   cursorStyle: appearance.value.cursorStyle,
   cursorBlink: appearance.value.cursorBlink,
-  scrollback: appearance.value.scrollback,
+  scrollback: behavior.value.scrollback,
   allowProposedApi: true,
 });
 
@@ -87,6 +87,12 @@ terminal.attachCustomKeyEventHandler((e) => {
   return true;
 });
 
+terminal.onSelectionChange(() => {
+  if (!copyOnSelect.value) return;
+  const selection = terminal.getSelection();
+  if (selection) navigator.clipboard.writeText(selection).catch(() => {});
+});
+
 // Re-apply appearance whenever the settings store changes. xterm.js
 // supports live updates via the `options` setter without re-mounting.
 watchEffect(() => {
@@ -98,7 +104,7 @@ watchEffect(() => {
   terminal.options.lineHeight = appearance.value.lineHeight;
   terminal.options.cursorStyle = appearance.value.cursorStyle;
   terminal.options.cursorBlink = appearance.value.cursorBlink;
-  terminal.options.scrollback = appearance.value.scrollback;
+  terminal.options.scrollback = behavior.value.scrollback;
 });
 
 let resizeObserver: ResizeObserver | undefined;

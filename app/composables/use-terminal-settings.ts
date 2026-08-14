@@ -42,6 +42,12 @@ interface Appearance {
   cursorStyle: CursorStyle;
   /** Whether the cursor blinks. */
   cursorBlink: boolean;
+}
+
+/** Runtime-configurable terminal behavior (non-visual). */
+interface Behavior {
+  /** Whether releasing a selection copies it to the clipboard. */
+  copyOnSelect: boolean;
   /** Scrollback buffer size in lines. */
   scrollback: number;
 }
@@ -345,13 +351,19 @@ export function useTerminalSettings() {
     cursorBlink: true,
     fontWeight: 400,
     fontWeightBold: 700,
+  };
+
+  const defaultBehavior: Behavior = {
+    copyOnSelect: false,
     scrollback: 1000,
   };
 
   const appearance = useLocalStorage('terminal-settings:appearance', () => defaultAppearance);
+  const behavior = useLocalStorage('terminal-settings:behavior', () => defaultBehavior);
 
   // Merge defaults for any fields added after the user's last settings save.
   appearance.value = { ...defaultAppearance, ...appearance.value };
+  behavior.value = { ...defaultBehavior, ...behavior.value };
   const colorScheme = computed(() => getColorScheme(appearance.value.colorSchemeId));
 
   const colorSchemeId = computed({
@@ -446,26 +458,35 @@ export function useTerminalSettings() {
     },
   });
 
+  const copyOnSelect = computed({
+    get: () => behavior.value.copyOnSelect,
+    set: (value) => {
+      behavior.value = { ...behavior.value, copyOnSelect: value };
+    },
+  });
+
   /** Minimum usable scrollback lines. */
   const scrollbackMin = 500;
   /** Maximum usable scrollback lines. */
   const scrollbackMax = 100000;
 
   function clampScrollback(n: number): number {
-    if (Number.isNaN(n)) return defaultAppearance.scrollback;
+    if (Number.isNaN(n)) return defaultBehavior.scrollback;
     return Math.min(scrollbackMax, Math.max(scrollbackMin, Math.round(n)));
   }
 
   const scrollback = computed({
-    get: () => appearance.value.scrollback,
+    get: () => behavior.value.scrollback,
     set: (value) => {
-      appearance.value = { ...appearance.value, scrollback: clampScrollback(value) };
+      behavior.value = { ...behavior.value, scrollback: clampScrollback(value) };
     },
   });
 
   return {
     defaultAppearance,
+    defaultBehavior,
     appearance,
+    behavior,
     colorScheme,
     colorSchemeId,
     fontSizeMin,
@@ -481,6 +502,7 @@ export function useTerminalSettings() {
     cursorStyleOptions,
     cursorStyle,
     cursorBlink,
+    copyOnSelect,
     scrollbackMin,
     scrollbackMax,
     scrollback,

@@ -12,6 +12,7 @@ const {
   cursorStyle,
   cursorStyleOptions,
   cursorBlink,
+  copyOnSelect,
   scrollback,
   scrollbackMin,
   scrollbackMax,
@@ -105,6 +106,13 @@ const colorSchemes = [
         <Label for="cursor-blink" class="text-sm cursor-pointer">Cursor Blink</Label>
       </div>
       <FieldDescription>Flashes the cursor to make it easier to find.</FieldDescription>
+    </Field>
+    <Field class="justify-end">
+      <div class="flex items-center gap-2">
+        <Checkbox id="copy-on-select" v-model="copyOnSelect" />
+        <Label for="copy-on-select" class="text-sm cursor-pointer">Copy on Select</Label>
+      </div>
+      <FieldDescription>Copies selected text to the clipboard on release.</FieldDescription>
     </Field>
     <Field>
       <FieldLabel>Scrollback</FieldLabel>
