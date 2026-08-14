@@ -33,6 +33,7 @@ const terminal = new Terminal({
   lineHeight: appearance.value.lineHeight,
   cursorStyle: appearance.value.cursorStyle,
   cursorBlink: appearance.value.cursorBlink,
+  cursorInactiveStyle: 'outline',
   scrollback: behavior.value.scrollback,
   allowProposedApi: true,
 });
