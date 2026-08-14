@@ -102,6 +102,13 @@ terminal.onScroll(() => {
   scrolledUp.value = buf.viewportY < buf.baseY;
 });
 
+const bellFlash = ref(false);
+
+terminal.onBell(() => {
+  bellFlash.value = true;
+  setTimeout(() => (bellFlash.value = false), 120);
+});
+
 // Re-apply appearance whenever the settings store changes. xterm.js
 // supports live updates via the `options` setter without re-mounting.
 watchEffect(() => {
@@ -203,7 +210,10 @@ watch(
 <template>
   <div
     class="terminal-container w-full h-full box-border overflow-hidden p-4 relative transition-all"
-    :class="sftpPanelOpen || portForwardingPanelOpen ? 'rounded-xl' : 'rounded-lg'"
+    :class="[
+      sftpPanelOpen || portForwardingPanelOpen ? 'rounded-xl' : 'rounded-lg',
+      bellFlash ? 'bell-flash' : '',
+    ]"
     :style="{ backgroundColor: colorScheme.theme.background }"
   >
     <div ref="container" class="absolute top-4 left-4 right-4 bottom-4" />
