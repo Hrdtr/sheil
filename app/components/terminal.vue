@@ -4,6 +4,7 @@ import { ArrowDownIcon, ChevronDownIcon, ChevronUpIcon, XIcon } from '@lucide/vu
 import { listen } from '@tauri-apps/api/event';
 import { FitAddon } from '@xterm/addon-fit';
 import { SearchAddon } from '@xterm/addon-search';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal } from '@xterm/xterm';
@@ -59,9 +60,12 @@ function onAcceptSuggestion() {
 const fitAddon = new FitAddon();
 const webLinksAddon = new WebLinksAddon();
 const searchAddon = new SearchAddon();
+const unicode11 = new Unicode11Addon();
 terminal.loadAddon(fitAddon);
 terminal.loadAddon(webLinksAddon);
 terminal.loadAddon(searchAddon);
+terminal.loadAddon(unicode11);
+terminal.unicode.activeVersion = '11';
 
 try {
   terminal.loadAddon(new WebglAddon());
