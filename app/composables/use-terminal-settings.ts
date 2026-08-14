@@ -406,10 +406,16 @@ export function useTerminalSettings() {
    * `font-family` stack — the first installed font wins.
    */
   const fontFamilyOptions: readonly { label: string; value: string }[] = [
+    // Bundled via @nuxt/fonts
     { label: 'JetBrains Mono', value: '"JetBrains Mono", "Fira Code", monospace' },
     { label: 'Fira Code', value: '"Fira Code", "JetBrains Mono", monospace' },
-    { label: 'Cascadia Code', value: '"Cascadia Code", "JetBrains Mono", monospace' },
     { label: 'Source Code Pro', value: '"Source Code Pro", monospace' },
+    { label: 'IBM Plex Mono', value: '"IBM Plex Mono", monospace' },
+    { label: 'Space Mono', value: '"Space Mono", monospace' },
+    { label: 'Roboto Mono', value: '"Roboto Mono", monospace' },
+    { label: 'Inconsolata', value: '"Inconsolata", monospace' },
+    { label: 'Cascadia Code', value: '"Cascadia Code", "JetBrains Mono", monospace' },
+    // System built-ins
     { label: 'Menlo', value: 'Menlo, Monaco, monospace' },
     { label: 'Monaco', value: 'Monaco, Menlo, monospace' },
     { label: 'Consolas', value: 'Consolas, "Cascadia Code", monospace' },

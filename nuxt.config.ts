@@ -37,6 +37,16 @@ export default defineNuxtConfig({
     defaults: {
       weights: ['100 900'],
     },
+    families: [
+      { name: 'JetBrains Mono', provider: 'google', global: true, weights: ['100 800'] },
+      { name: 'Fira Code', provider: 'google', global: true, weights: ['300 700'] },
+      { name: 'Source Code Pro', provider: 'google', global: true, weights: ['200 900'] },
+      { name: 'IBM Plex Mono', provider: 'google', global: true, weights: ['100 700'] },
+      { name: 'Space Mono', provider: 'google', global: true, weights: ['400', '700'] },
+      { name: 'Roboto Mono', provider: 'google', global: true, weights: ['100 700'] },
+      { name: 'Inconsolata', provider: 'google', global: true, weights: ['200 900'] },
+      { name: 'Cascadia Code', provider: 'fontsource', global: true, weights: ['200 700'] },
+    ],
   },
   colorMode: {
     classSuffix: '',
