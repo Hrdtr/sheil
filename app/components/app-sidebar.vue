@@ -15,7 +15,7 @@ const props = withDefaults(defineProps<SidebarProps>(), {
 });
 
 const { groupedHosts } = useHosts();
-const { connect } = useSessions();
+const { connect, focusOrConnect } = useSessions();
 const { openSettings } = useSettings();
 
 const openQuickConnectDialog = inject<() => void>('openQuickConnectDialog');
@@ -88,7 +88,8 @@ const openQuickConnectDialog = inject<() => void>('openQuickConnectDialog');
                   <SidebarMenuButton
                     size="lg"
                     class="hover:bg-accent dark:hover:bg-accent/50 transition-colors rounded-lg h-fit group/button px-2.5 py-[5.5px]"
-                    @click="() => connect(host.id)"
+                    @click="() => focusOrConnect(host.id)"
+                    @dblclick="() => connect(host.id)"
                   >
                     <div
                       class="flex flex-col gap-0.5 min-w-0 text-muted-foreground group-hover/button:text-foreground transition-colors"

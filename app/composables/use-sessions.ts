@@ -174,6 +174,21 @@ function _useSessions() {
   };
 
   /**
+   * Focus an existing tab for a host, or open a new connection when none exists.
+   *
+   * @param hostId - Id of the host configuration to connect to.
+   * @returns The existing backend SSH session id, or the new one from {@link connect}.
+   */
+  const focusOrConnect = async (hostId: string): Promise<string | null> => {
+    const existing = sessions.value.find((session) => session.hostId === hostId);
+    if (existing) {
+      switchTab(existing.tabId);
+      return existing.sshSessionId;
+    }
+    return connect(hostId);
+  };
+
+  /**
    * Activate a tab by id. No-op if the id doesn't match an existing tab.
    */
   const switchTab = (tabId: string): void => {
@@ -247,6 +262,7 @@ function _useSessions() {
     activeSession,
     connect,
     disconnect,
+    focusOrConnect,
     switchTab,
     setTitle,
     reorder,
