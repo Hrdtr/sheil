@@ -5,8 +5,8 @@ import { listen } from '@tauri-apps/api/event';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
-import '@xterm/xterm/css/xterm.css';
 import { Terminal } from '@xterm/xterm';
+import '@xterm/xterm/css/xterm.css';
 
 const props = defineProps<{
   sessionId: string | null;
@@ -15,7 +15,7 @@ const props = defineProps<{
 
 const containerRef = useTemplateRef('container');
 
-const { appearance, behavior, colorScheme, copyOnSelect, minimumContrastRatio } =
+const { appearance, behavior, colorScheme, copyOnSelect, minimumContrastRatio, scrollSensitivity } =
   useTerminalSettings();
 const { panelOpen: sftpPanelOpen } = useSftp();
 const { panelOpen: portForwardingPanelOpen } = usePortForwarding();
@@ -38,6 +38,7 @@ const terminal = new Terminal({
   cursorInactiveStyle: 'outline',
   minimumContrastRatio: appearance.value.minimumContrastRatio,
   scrollback: behavior.value.scrollback,
+  scrollSensitivity: behavior.value.scrollSensitivity,
   allowProposedApi: true,
 });
 
@@ -124,6 +125,7 @@ watchEffect(() => {
   terminal.options.cursorBlink = appearance.value.cursorBlink;
   terminal.options.minimumContrastRatio = appearance.value.minimumContrastRatio;
   terminal.options.scrollback = behavior.value.scrollback;
+  terminal.options.scrollSensitivity = behavior.value.scrollSensitivity;
 });
 
 watch(

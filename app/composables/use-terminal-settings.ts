@@ -52,6 +52,8 @@ interface Behavior {
   copyOnSelect: boolean;
   /** Scrollback buffer size in lines. */
   scrollback: number;
+  /** Scroll speed multiplier for wheel/trackpad. */
+  scrollSensitivity: number;
 }
 
 /**
@@ -359,6 +361,7 @@ export function useTerminalSettings() {
   const defaultBehavior: Behavior = {
     copyOnSelect: false,
     scrollback: 1000,
+    scrollSensitivity: 1,
   };
 
   const appearance = useLocalStorage('terminal-settings:appearance', () => defaultAppearance);
@@ -502,6 +505,23 @@ export function useTerminalSettings() {
     },
   });
 
+  /** Minimum scroll sensitivity. */
+  const scrollSensitivityMin = 0.5;
+  /** Maximum scroll sensitivity. */
+  const scrollSensitivityMax = 5;
+
+  function clampScrollSensitivity(n: number): number {
+    if (Number.isNaN(n)) return defaultBehavior.scrollSensitivity;
+    return Math.min(scrollSensitivityMax, Math.max(scrollSensitivityMin, n));
+  }
+
+  const scrollSensitivity = computed({
+    get: () => behavior.value.scrollSensitivity,
+    set: (value) => {
+      behavior.value = { ...behavior.value, scrollSensitivity: clampScrollSensitivity(value) };
+    },
+  });
+
   return {
     defaultAppearance,
     defaultBehavior,
@@ -529,5 +549,8 @@ export function useTerminalSettings() {
     scrollbackMin,
     scrollbackMax,
     scrollback,
+    scrollSensitivityMin,
+    scrollSensitivityMax,
+    scrollSensitivity,
   };
 }

@@ -19,6 +19,9 @@ const {
   scrollback,
   scrollbackMin,
   scrollbackMax,
+  scrollSensitivity,
+  scrollSensitivityMin,
+  scrollSensitivityMax,
 } = useTerminalSettings();
 
 const colorSchemes = [
@@ -140,6 +143,18 @@ const colorSchemes = [
         @update:model-value="scrollback = Number($event)"
       />
       <FieldDescription>Number of lines kept in scrollback history.</FieldDescription>
+    </Field>
+    <Field>
+      <FieldLabel>Scroll Sensitivity</FieldLabel>
+      <Input
+        :model-value="String(scrollSensitivity)"
+        type="number"
+        :min="scrollSensitivityMin"
+        :max="scrollSensitivityMax"
+        step="0.5"
+        @update:model-value="scrollSensitivity = Number($event)"
+      />
+      <FieldDescription>Scroll speed multiplier for wheel and trackpad.</FieldDescription>
     </Field>
   </div>
 </template>
