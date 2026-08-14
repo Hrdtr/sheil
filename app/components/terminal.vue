@@ -105,12 +105,14 @@ watch(
 
     registerTerminal(sessionId, terminal);
 
-    const cols = terminal.cols;
-    const rows = terminal.rows;
-
-    commands.ssh.openChannel(sessionId, cols, rows).catch((e) => {
-      terminal.writeln(`\r\n\x1b[31mPTY error: ${e}\x1b[0m`);
-    });
+    commands.ssh
+      .openChannel(sessionId, terminal.cols, terminal.rows)
+      .then(() =>
+        commands.ssh.resize(sessionId, terminal.cols, terminal.rows),
+      )
+      .catch((e) => {
+        terminal.writeln(`\r\n\x1b[31mPTY error: ${e}\x1b[0m`);
+      });
 
     const titleDispose = terminal.onTitleChange((title) => {
       props.onTitleChange?.(title);
