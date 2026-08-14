@@ -34,6 +34,7 @@ const terminal = new Terminal({
   cursorStyle: appearance.value.cursorStyle,
   cursorBlink: appearance.value.cursorBlink,
   scrollback: appearance.value.scrollback,
+  allowProposedApi: true,
 });
 
 const terminalRef = ref(terminal);
@@ -59,6 +60,32 @@ try {
 } catch {
   // WebGL not available — fall back to default canvas renderer
 }
+
+const { macOS } = useKbd();
+
+terminal.attachCustomKeyEventHandler((e) => {
+  if (e.type !== 'keydown') return true;
+  const mod = macOS.value ? e.metaKey && !e.ctrlKey : e.ctrlKey && e.shiftKey;
+  if (mod && e.key.toLowerCase() === 'c') {
+    e.preventDefault();
+    const selection = terminal.getSelection();
+    if (selection) {
+      navigator.clipboard.writeText(selection).catch(() => {});
+    } else {
+      terminal.input('\x03');
+    }
+    return false;
+  }
+  if (mod && e.key.toLowerCase() === 'v') {
+    e.preventDefault();
+    navigator.clipboard
+      .readText()
+      .then((text) => text && terminal.paste(text))
+      .catch(() => {});
+    return false;
+  }
+  return true;
+});
 
 // Re-apply appearance whenever the settings store changes. xterm.js
 // supports live updates via the `options` setter without re-mounting.
@@ -107,9 +134,7 @@ watch(
 
     commands.ssh
       .openChannel(sessionId, terminal.cols, terminal.rows)
-      .then(() =>
-        commands.ssh.resize(sessionId, terminal.cols, terminal.rows),
-      )
+      .then(() => commands.ssh.resize(sessionId, terminal.cols, terminal.rows))
       .catch((e) => {
         terminal.writeln(`\r\n\x1b[31mPTY error: ${e}\x1b[0m`);
       });
