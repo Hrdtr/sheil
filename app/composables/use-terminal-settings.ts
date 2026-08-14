@@ -495,9 +495,11 @@ export function useTerminalSettings() {
   });
 
   /** Minimum usable scrollback lines. */
-  const scrollbackMin = 500;
+  const scrollbackMin = 100;
   /** Maximum usable scrollback lines. */
-  const scrollbackMax = 100000;
+  const scrollbackMax = 10000;
+  /** Scrollback slider increment. */
+  const scrollbackStep = 100;
 
   function clampScrollback(n: number): number {
     if (Number.isNaN(n)) return defaultBehavior.scrollback;
@@ -512,9 +514,11 @@ export function useTerminalSettings() {
   });
 
   /** Minimum scroll sensitivity. */
-  const scrollSensitivityMin = 0.5;
+  const scrollSensitivityMin = 0.25;
   /** Maximum scroll sensitivity. */
-  const scrollSensitivityMax = 5;
+  const scrollSensitivityMax = 4;
+  /** Scroll sensitivity slider increment. */
+  const scrollSensitivityStep = 0.25;
 
   function clampScrollSensitivity(n: number): number {
     if (Number.isNaN(n)) return defaultBehavior.scrollSensitivity;
@@ -533,6 +537,8 @@ export function useTerminalSettings() {
     defaultBehavior,
     appearance,
     behavior,
+    colorSchemes,
+    getColorScheme,
     colorScheme,
     colorSchemeId,
     fontSizeMin,
@@ -554,9 +560,11 @@ export function useTerminalSettings() {
     copyOnSelect,
     scrollbackMin,
     scrollbackMax,
+    scrollbackStep,
     scrollback,
     scrollSensitivityMin,
     scrollSensitivityMax,
+    scrollSensitivityStep,
     scrollSensitivity,
   };
 }
