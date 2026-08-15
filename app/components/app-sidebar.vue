@@ -16,7 +16,7 @@ const props = withDefaults(defineProps<SidebarProps>(), {
 
 const { groupedHosts } = useHosts();
 const { connect, focusOrConnect } = useSessions();
-const { openSettings } = useSettings();
+const { openSettings } = useSettingsTab();
 
 const openQuickConnectDialog = inject<() => void>('openQuickConnectDialog');
 </script>

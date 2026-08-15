@@ -29,7 +29,7 @@ const {
 } = useTerminalFocus();
 
 const terminal = new Terminal({
-  theme: colorScheme.value.theme,
+  theme: colorScheme.value,
   fontFamily: appearance.value.fontFamily,
   fontSize: appearance.value.fontSize,
   fontWeight: appearance.value.fontWeight,
@@ -145,10 +145,10 @@ function findNext() {
   if (!searchTerm.value) return;
   hasMatches.value = searchAddon.findNext(searchTerm.value, {
     decorations: {
-      matchBackground: colorScheme.value.theme.selectionBackground ?? '#585b70',
-      activeMatchBackground: colorScheme.value.theme.cursor ?? '#f5e0dc',
-      matchOverviewRuler: colorScheme.value.theme.cursor ?? '#f5e0dc',
-      activeMatchColorOverviewRuler: colorScheme.value.theme.cursor ?? '#f5e0dc',
+      matchBackground: colorScheme.value.selectionBackground ?? '#585b70',
+      activeMatchBackground: colorScheme.value.cursor ?? '#f5e0dc',
+      matchOverviewRuler: colorScheme.value.cursor ?? '#f5e0dc',
+      activeMatchColorOverviewRuler: colorScheme.value.cursor ?? '#f5e0dc',
     },
   });
 }
@@ -157,10 +157,10 @@ function findPrev() {
   if (!searchTerm.value) return;
   hasMatches.value = searchAddon.findPrevious(searchTerm.value, {
     decorations: {
-      matchBackground: colorScheme.value.theme.selectionBackground ?? '#585b70',
-      activeMatchBackground: colorScheme.value.theme.cursor ?? '#f5e0dc',
-      matchOverviewRuler: colorScheme.value.theme.cursor ?? '#f5e0dc',
-      activeMatchColorOverviewRuler: colorScheme.value.theme.cursor ?? '#f5e0dc',
+      matchBackground: colorScheme.value.selectionBackground ?? '#585b70',
+      activeMatchBackground: colorScheme.value.cursor ?? '#f5e0dc',
+      matchOverviewRuler: colorScheme.value.cursor ?? '#f5e0dc',
+      activeMatchColorOverviewRuler: colorScheme.value.cursor ?? '#f5e0dc',
     },
   });
 }
@@ -168,7 +168,7 @@ function findPrev() {
 // Re-apply appearance whenever the settings store changes. xterm.js
 // supports live updates via the `options` setter without re-mounting.
 watchEffect(() => {
-  terminal.options.theme = colorScheme.value.theme;
+  terminal.options.theme = colorScheme.value;
   terminal.options.fontFamily = appearance.value.fontFamily;
   terminal.options.fontSize = appearance.value.fontSize;
   terminal.options.fontWeight = appearance.value.fontWeight;
@@ -276,7 +276,7 @@ watch(
       sftpPanelOpen || portForwardingPanelOpen ? 'rounded-xl' : 'rounded-lg',
       bellFlash ? 'bell-flash' : '',
     ]"
-    :style="{ backgroundColor: colorScheme.theme.background }"
+    :style="{ backgroundColor: colorScheme.background }"
   >
     <div ref="container" class="absolute top-4 left-4 right-4 bottom-4" />
     <div

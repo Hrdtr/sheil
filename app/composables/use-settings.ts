@@ -1,27 +1,19 @@
-function _useSettings() {
-  const { sessions, activeTabId } = useSessions();
+import { useDebounceFn } from '@vueuse/core';
 
-  const settingsTabId = '__settings';
+export function useSettings<T extends object>(namespace: string): Ref<T> {
+  const debouncedPersist = useDebounceFn((value: T) => {
+    settingsStore
+      .persist(namespace, value as unknown as Record<string, unknown>)
+      .catch((error: unknown) => {
+        console.error('failed to persist settings:', error);
+      });
+  }, 300);
 
-  function openSettings() {
-    if (sessions.value.find((session) => session.tabId === settingsTabId)) {
-      activeTabId.value = settingsTabId;
-      return;
-    }
-
-    sessions.value.push({
-      tabId: settingsTabId,
-      hostId: '',
-      hostName: 'Settings',
-      title: null,
-      sshSessionId: null,
-      state: 'connected' as const,
-      error: null,
-    });
-    activeTabId.value = settingsTabId;
-  }
-
-  return { settingsTabId, openSettings };
+  return computed<T>({
+    get: () => settingsStore.namespaceSettings<T>(namespace),
+    set: (value) => {
+      settingsStore.applyLocal(namespace, value as unknown as Record<string, unknown>);
+      debouncedPersist(value);
+    },
+  });
 }
-
-export const useSettings = createSharedComposable(_useSettings);

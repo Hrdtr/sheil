@@ -3,7 +3,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 
 function _useConfirmClose() {
   const { sessions } = useSessions();
-  const { settingsTabId } = useSettings();
+  const { settingsTabId } = useSettingsTab();
 
   const enabled = useLocalStorage('settings:confirm-close', false);
   const destroy = ref(false);

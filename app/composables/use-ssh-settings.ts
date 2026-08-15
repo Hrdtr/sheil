@@ -12,12 +12,7 @@ interface SshSettings {
 }
 
 function _useSshSettings() {
-  const defaultSshSettings: SshSettings = {
-    keepaliveInterval: null,
-    connectTimeout: null,
-  };
-
-  const sshSettings = useLocalStorage('ssh-settings', () => defaultSshSettings);
+  const sshSettings = useSettings<SshSettings>('ssh');
 
   const keepaliveIntervalMin = 0;
   const keepaliveIntervalMax = 3600;
@@ -55,6 +50,10 @@ function _useSshSettings() {
     },
   });
 
+  async function reset(): Promise<void> {
+    await settingsStore.resetNamespaces(['ssh']);
+  }
+
   return {
     keepaliveInterval,
     keepaliveIntervalMin,
@@ -62,6 +61,7 @@ function _useSshSettings() {
     connectTimeout,
     connectTimeoutMin,
     connectTimeoutMax,
+    reset,
   };
 }
 

@@ -20,7 +20,13 @@ const {
   models,
   modelsLoadError,
   selectedFile,
+  reset,
 } = useAiSettings();
+
+async function handleReset() {
+  await reset();
+  toast.success('AI settings reset to defaults.');
+}
 
 const { downloadModel, clearModelCache, checkCacheStatus, state: engineState } = useAiEngine();
 
@@ -266,5 +272,9 @@ watch(enabled, (value) => {
         </CollapsibleContent>
       </Collapsible>
     </template>
+
+    <div class="flex justify-end">
+      <Button variant="outline" size="sm" @click="handleReset">Reset to defaults</Button>
+    </div>
   </div>
 </template>

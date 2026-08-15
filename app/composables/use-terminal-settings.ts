@@ -4,7 +4,7 @@ import type { ITheme } from '@xterm/xterm';
 type CursorStyle = 'block' | 'underline' | 'bar';
 
 /** Identifier for a bundled color scheme preset. */
-type ColorSchemeId =
+type ColorSchemePresetId =
   | 'catppuccin-mocha'
   | 'catppuccin-latte'
   | 'dracula'
@@ -16,18 +16,19 @@ type ColorSchemeId =
   | 'tokyo-night';
 
 /** A named color scheme that maps directly onto xterm.js's `ITheme`. */
-interface ColorScheme {
-  id: ColorSchemeId;
+interface ColorSchemePreset {
+  id: ColorSchemePresetId;
   name: string;
   theme: ITheme;
 }
 
 /**
- * Runtime-configurable terminal appearance. Persisted to SQLite in Phase 1.5.
+ * Runtime-configurable terminal appearance. Persisted to SQLite as key-value
+ * settings via {@link useSettings}.
  */
 interface Appearance {
-  /** Active color scheme id. */
-  colorSchemeId: ColorSchemeId;
+  /** Active xterm.js color theme. */
+  colorScheme: ITheme;
   /** Font size in pixels. */
   fontSize: number;
   /** CSS font-family stack. */
@@ -62,7 +63,7 @@ interface Behavior {
  * Sources: official palette repos (MIT/CC0). Hex values are the canonical
  * reference palettes — do not tweak ad-hoc.
  */
-const colorSchemes: readonly ColorScheme[] = [
+const colorSchemePresets: readonly ColorSchemePreset[] = [
   {
     id: 'catppuccin-mocha',
     name: 'Catppuccin Mocha',
@@ -71,8 +72,8 @@ const colorSchemes: readonly ColorScheme[] = [
       foreground: '#cdd6f4',
       cursor: '#f5e0dc',
       cursorAccent: '#1e1e2e',
-      selectionBackground: '#585b70',
-      selectionForeground: '#cdd6f4',
+      selectionBackground: '#f5e0dc',
+      selectionForeground: '#1e1e2e',
       black: '#45475a',
       red: '#f38ba8',
       green: '#a6e3a1',
@@ -317,65 +318,26 @@ const colorSchemes: readonly ColorScheme[] = [
   },
 ] as const;
 
-/** Lookup map: {@link ColorSchemeId} → {@link ColorScheme}. Built from {@link colorSchemes}. */
-const colorSchemeIndex: ReadonlyMap<ColorSchemeId, ColorScheme> = new Map(
-  colorSchemes.map((scheme) => [scheme.id, scheme]),
-);
-
-/**
- * Look up a color scheme by id. Falls back to Catppuccin Mocha (the default)
- * if the id is unknown so the terminal always has a usable palette.
- */
-function getColorScheme(id: ColorSchemeId): ColorScheme {
-  return colorSchemeIndex.get(id) ?? colorSchemeIndex.get('catppuccin-mocha')!;
-}
-
 /**
  * Composable for terminal appearance settings.
  *
- * Exposes reactive state (backed by `useState`) for the terminal's
- * color scheme, font, cursor, and line-height settings, along with
- * bounds, options arrays for select inputs, and clamp helpers.
+ * Exposes reactive state (backed by `useState` via {@link useSettings}) for
+ * the terminal's color scheme, font, cursor, and line-height settings, along
+ * with bounds, options arrays for select inputs, and clamp helpers.
  *
- * Settings are stored in Nuxt state under the key
- * `"terminal-settings:appearance"` so they survive HMR and can be
- * hydrated cross-route. Persistence to SQLite is planned in Phase 1.5.
+ * Values are read from and persisted to the SQLite `setting` table.
  */
 export function useTerminalSettings() {
-  /**
-   * Default terminal appearance. Matches the values that were previously
-   * hard-coded in `terminal.vue` so existing behavior is preserved.
-   */
-  const defaultAppearance: Appearance = {
-    colorSchemeId: 'catppuccin-mocha',
-    fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-    fontSize: 14,
-    lineHeight: 1.2,
-    cursorStyle: 'block',
-    cursorBlink: true,
-    minimumContrastRatio: 1,
-    fontWeight: 400,
-    fontWeightBold: 700,
-  };
+  const defaultAppearance = settingsStore.namespaceDefaults<Appearance>('terminal.appearance');
+  const defaultBehavior = settingsStore.namespaceDefaults<Behavior>('terminal.behavior');
 
-  const defaultBehavior: Behavior = {
-    copyOnSelect: false,
-    scrollback: 1000,
-    scrollSensitivity: 1,
-  };
+  const appearance = useSettings<Appearance>('terminal.appearance');
+  const behavior = useSettings<Behavior>('terminal.behavior');
 
-  const appearance = useLocalStorage('terminal-settings:appearance', () => defaultAppearance);
-  const behavior = useLocalStorage('terminal-settings:behavior', () => defaultBehavior);
-
-  // Merge defaults for any fields added after the user's last settings save.
-  appearance.value = { ...defaultAppearance, ...appearance.value };
-  behavior.value = { ...defaultBehavior, ...behavior.value };
-  const colorScheme = computed(() => getColorScheme(appearance.value.colorSchemeId));
-
-  const colorSchemeId = computed({
-    get: () => appearance.value.colorSchemeId,
-    set: (value) => {
-      appearance.value = { ...appearance.value, colorSchemeId: value };
+  const colorScheme = computed<ITheme>({
+    get: () => appearance.value.colorScheme ?? {},
+    set: (theme) => {
+      appearance.value = { ...appearance.value, colorScheme: { ...theme } };
     },
   });
 
@@ -532,15 +494,17 @@ export function useTerminalSettings() {
     },
   });
 
+  async function reset(): Promise<void> {
+    await settingsStore.resetNamespaces(['terminal.appearance', 'terminal.behavior']);
+  }
+
   return {
     defaultAppearance,
     defaultBehavior,
     appearance,
     behavior,
-    colorSchemes,
-    getColorScheme,
     colorScheme,
-    colorSchemeId,
+    colorSchemePresets,
     fontSizeMin,
     fontSizeMax,
     fontSize,
@@ -566,5 +530,6 @@ export function useTerminalSettings() {
     scrollSensitivityMax,
     scrollSensitivityStep,
     scrollSensitivity,
+    reset,
   };
 }

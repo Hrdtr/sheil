@@ -3,9 +3,8 @@ import type { ITheme } from '@xterm/xterm';
 import { cn } from '@/lib/utils';
 
 const {
-  colorSchemes,
-  getColorScheme,
-  colorSchemeId,
+  colorSchemePresets,
+  colorScheme,
   fontSize,
   fontSizeMin,
   fontSizeMax,
@@ -29,7 +28,13 @@ const {
   scrollSensitivityMin,
   scrollSensitivityMax,
   scrollSensitivityStep,
+  reset,
 } = useTerminalSettings();
+
+async function handleReset() {
+  await reset();
+  toast.success('Terminal settings reset to defaults.');
+}
 
 /** Label of the currently selected font family. */
 const selectedFontLabel = computed(
@@ -48,6 +53,20 @@ function ansiSwatches(theme: ITheme): string[] {
     theme.white,
   ].map((c) => c ?? 'transparent');
 }
+
+/** Stable key-sorted serialization so theme equality is order-independent. */
+function themeSignature(theme: ITheme): string {
+  return JSON.stringify(theme, Object.keys(theme).sort());
+}
+
+const currentThemeSignature = computed(() => {
+  const theme = colorScheme.value;
+  return theme ? themeSignature(theme) : '';
+});
+
+function isActiveTheme(theme: ITheme): boolean {
+  return themeSignature(theme) === currentThemeSignature.value;
+}
 </script>
 
 <template>
@@ -56,25 +75,25 @@ function ansiSwatches(theme: ITheme): string[] {
       <FieldLabel>Color Scheme</FieldLabel>
       <div class="grid grid-cols-2 @xs:grid-cols-3 gap-2">
         <button
-          v-for="scheme in colorSchemes"
+          v-for="scheme in colorSchemePresets"
           :key="scheme.id"
           type="button"
-          :aria-pressed="colorSchemeId === scheme.id"
+          :aria-pressed="isActiveTheme(scheme.theme)"
           :title="scheme.name"
           class="group flex flex-col gap-2 rounded-lg border transition-colors"
           :class="
             cn(
               'cursor-pointer',
-              colorSchemeId === scheme.id
+              isActiveTheme(scheme.theme)
                 ? 'border-primary/25 bg-accent'
                 : 'border-border hover:bg-accent/50',
             )
           "
-          @click="colorSchemeId = scheme.id"
+          @click="colorScheme = scheme.theme"
         >
           <div
             class="flex h-16 flex-col justify-between rounded-md p-2 font-mono text-[10px] leading-tight transition-transform duration-200"
-            :class="colorSchemeId === scheme.id ? 'scale-95' : 'scale-100'"
+            :class="isActiveTheme(scheme.theme) ? 'scale-95' : 'scale-100'"
             :style="{ background: scheme.theme.background, color: scheme.theme.foreground }"
           >
             <span class="truncate text-start leading-none">{{ scheme.name }}</span>
@@ -217,5 +236,9 @@ function ansiSwatches(theme: ITheme): string[] {
       />
       <FieldDescription>Scroll speed multiplier for wheel and trackpad.</FieldDescription>
     </Field>
+
+    <div class="flex justify-end">
+      <Button variant="outline" size="sm" @click="handleReset">Reset to defaults</Button>
+    </div>
   </div>
 </template>

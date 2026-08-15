@@ -47,20 +47,8 @@ const FALLBACK_MODELS: AiModel[] = [
 ];
 
 function _useAiSettings() {
-  const defaultSettings: AiSettings = {
-    enabled: false,
-    modelId: 'qwen2.5-coder-0.5b-instruct',
-    quant: 'Q4_K_M',
-    inlineCompletionEnabled: true,
-    commandPaletteEnabled: true,
-    maxTokens: 32,
-    temperature: 0.2,
-    topP: 0.95,
-    contextLines: 20,
-  };
-
-  const settings = useLocalStorage('ai-settings', () => defaultSettings);
-  settings.value = { ...defaultSettings, ...settings.value };
+  const defaults = settingsStore.namespaceDefaults<AiSettings>('ai');
+  const settings = useSettings<AiSettings>('ai');
 
   const enabled = computed({
     get: () => settings.value.enabled,
@@ -101,7 +89,7 @@ function _useAiSettings() {
   const maxTokensMax = 64;
 
   function clampMaxTokens(value: number): number {
-    if (Number.isNaN(value)) return defaultSettings.maxTokens;
+    if (Number.isNaN(value)) return defaults.maxTokens;
     return Math.min(maxTokensMax, Math.max(maxTokensMin, Math.round(value)));
   }
 
@@ -116,7 +104,7 @@ function _useAiSettings() {
   const temperatureMax = 2;
 
   function clampTemperature(value: number): number {
-    if (Number.isNaN(value)) return defaultSettings.temperature;
+    if (Number.isNaN(value)) return defaults.temperature;
     return Math.min(temperatureMax, Math.max(temperatureMin, value));
   }
 
@@ -131,7 +119,7 @@ function _useAiSettings() {
   const topPMax = 1;
 
   function clampTopP(value: number): number {
-    if (Number.isNaN(value)) return defaultSettings.topP;
+    if (Number.isNaN(value)) return defaults.topP;
     return Math.min(topPMax, Math.max(topPMin, value));
   }
 
@@ -146,7 +134,7 @@ function _useAiSettings() {
   const contextLinesMax = 100;
 
   function clampContextLines(value: number): number {
-    if (Number.isNaN(value)) return defaultSettings.contextLines;
+    if (Number.isNaN(value)) return defaults.contextLines;
     return Math.min(contextLinesMax, Math.max(contextLinesMin, Math.round(value)));
   }
 
@@ -186,6 +174,10 @@ function _useAiSettings() {
     return model.files.find((f) => f.quant === quant.value) ?? model.files[0] ?? null;
   });
 
+  async function reset(): Promise<void> {
+    await settingsStore.resetNamespaces(['ai']);
+  }
+
   return {
     settings,
     enabled,
@@ -209,6 +201,7 @@ function _useAiSettings() {
     modelsLoadError,
     selectBestQuant,
     selectedFile,
+    reset,
   };
 }
 

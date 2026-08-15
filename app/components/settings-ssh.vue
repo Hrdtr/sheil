@@ -6,7 +6,13 @@ const {
   connectTimeout,
   connectTimeoutMin,
   connectTimeoutMax,
+  reset,
 } = useSshSettings();
+
+async function handleReset() {
+  await reset();
+  toast.success('SSH settings reset to defaults.');
+}
 </script>
 
 <template>
@@ -35,5 +41,9 @@ const {
         >Aborts the connection if the server doesn't respond within this time.</FieldDescription
       >
     </Field>
+
+    <div class="flex justify-end">
+      <Button variant="outline" size="sm" @click="handleReset">Reset to defaults</Button>
+    </div>
   </div>
 </template>

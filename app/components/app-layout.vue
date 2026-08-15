@@ -9,7 +9,7 @@ const props = withDefaults(defineProps<{ sidebarOpen?: boolean }>(), { sidebarOp
 const emit = defineEmits<{ 'update:sidebar-open': [value: boolean] }>();
 
 const { sessions, activeTabId, switchTab, reorder } = useSessions();
-const { settingsTabId } = useSettings();
+const { settingsTabId } = useSettingsTab();
 const { panelOpen: pfOpen, forwards } = usePortForwarding();
 const { panelOpen: sftpOpen } = useSftp();
 

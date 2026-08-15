@@ -369,10 +369,57 @@ const ai = {
   },
 };
 
+// ── Settings ────────────────────────────────────────────────────────────
+
+interface SettingEntry {
+  key: string;
+  value: string;
+  defaultValue: string;
+  valueType: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SettingInput {
+  key: string;
+  value: string;
+}
+
+const settings = {
+  getAll: async (): Promise<SettingEntry[]> => {
+    return invoke<SettingEntry[]>('settings_get_all');
+  },
+
+  get: async (key: string): Promise<SettingEntry | null> => {
+    return invoke<SettingEntry | null>('settings_get', { key });
+  },
+
+  set: async (key: string, value: string): Promise<void> => {
+    return invoke('settings_set', { key, value });
+  },
+
+  setMany: async (entries: SettingInput[]): Promise<void> => {
+    return invoke('settings_set_many', { entries });
+  },
+
+  reset: async (key: string): Promise<void> => {
+    return invoke('settings_reset', { key });
+  },
+
+  resetMany: async (keys: string[]): Promise<void> => {
+    return invoke('settings_reset_many', { keys });
+  },
+
+  resetAll: async (): Promise<void> => {
+    return invoke('settings_reset_all');
+  },
+};
+
 export const commands = {
   host,
   ssh,
   portForward,
   sftp,
   ai,
+  settings,
 };

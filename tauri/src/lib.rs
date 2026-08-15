@@ -15,6 +15,10 @@ use commands::port_forward::{
     port_forward_list, port_forward_start_dynamic, port_forward_start_local,
     port_forward_start_remote, port_forward_stop,
 };
+use commands::settings::{
+    seed_settings, settings_get, settings_get_all, settings_reset, settings_reset_all,
+    settings_reset_many, settings_set, settings_set_many,
+};
 use commands::sftp::{
     sftp_canonicalize, sftp_connect, sftp_create_dir, sftp_disconnect, sftp_download, sftp_exists,
     sftp_list_dir, sftp_read_file, sftp_remove_dir, sftp_remove_file, sftp_rename, sftp_stat,
@@ -57,6 +61,7 @@ pub fn run() {
                 .expect("failed to resolve app data directory");
 
             let pool = tauri::async_runtime::block_on(db::init(&app_data_dir))?;
+            tauri::async_runtime::block_on(seed_settings(&pool)).expect("failed to seed settings");
             let master_key = load_or_create_master_key(&app_data_dir)
                 .expect("failed to load or create master encryption key");
 
@@ -114,6 +119,13 @@ pub fn run() {
             sftp_write_file,
             sftp_download,
             sftp_upload,
+            settings_get_all,
+            settings_get,
+            settings_set,
+            settings_set_many,
+            settings_reset,
+            settings_reset_many,
+            settings_reset_all,
             ai_download_model,
             ai_delete_model,
             ai_list_models,

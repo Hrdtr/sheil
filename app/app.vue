@@ -21,7 +21,7 @@ const {
   cancelClose,
   showConfirmCloseDialog,
 } = useConfirmClose();
-const { openSettings, settingsTabId } = useSettings();
+const { openSettings, settingsTabId } = useSettingsTab();
 const { togglePanel: togglePortForwardingPanel } = usePortForwarding();
 const { togglePanel: toggleSftpPanel } = useSftp();
 const { enabled: aiEnabled, commandPaletteEnabled: aiPaletteEnabled } = useAiSettings();
