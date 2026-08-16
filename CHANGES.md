@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.1.6 (2026-08-16)
+
+### Features
+
+- **settings:** implement persistent key-value settings in SQLite (59e42e3)
+
+### Bug Fixes
+
+- **terminal:** use tauri clipboard plugin for paste (8a231b4)
+
+### Refactoring
+
+- **credentials:** unify keys and passwords into reusable credentials (c1d2939)
+- **credential:** normalize service namespaces (6cc5267)
+
 ## v0.1.5 (2026-08-14)
 
 ### Features
