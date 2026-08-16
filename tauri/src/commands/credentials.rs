@@ -4,8 +4,8 @@ use tauri::command;
 
 use crate::commands::hosts::SharedPool;
 use crate::commands::ssh::{key_fingerprint, parse_private_key, try_parse_key_info};
-use crate::crypto::{self, MASTER_KEY_SIZE, NONCE_SIZE};
 use crate::credentials::{self, CredentialKind, CredentialRow};
+use crate::crypto::{self, MASTER_KEY_SIZE, NONCE_SIZE};
 use crate::MasterKey;
 
 /// Deserializes a JSON `null` as `Some(None)` (explicit clear) while an absent
@@ -210,8 +210,8 @@ async fn credential_update_inner(
             None if update.value.is_some() => None,
             None => current_passphrase,
         };
-        let key = parse_private_key(&new_value, new_passphrase.as_deref())
-            .map_err(|e| e.to_string())?;
+        let key =
+            parse_private_key(&new_value, new_passphrase.as_deref()).map_err(|e| e.to_string())?;
         Some((key.algorithm().to_string(), key_fingerprint(&key)))
     } else {
         None
@@ -273,7 +273,9 @@ async fn credential_delete_inner(pool: &SqlitePool, id: &str) -> Result<(), Stri
     .await
     .map_err(|e| format!("database error: {e}"))?;
 
-    tx.commit().await.map_err(|e| format!("database error: {e}"))?;
+    tx.commit()
+        .await
+        .map_err(|e| format!("database error: {e}"))?;
     Ok(())
 }
 
@@ -402,14 +404,22 @@ mod tests {
         .unwrap();
 
         assert_eq!(created.key_type.as_deref(), Some("ssh-ed25519"));
-        assert!(created.key_fingerprint.as_deref().unwrap().starts_with("SHA256:"));
+        assert!(created
+            .key_fingerprint
+            .as_deref()
+            .unwrap()
+            .starts_with("SHA256:"));
 
         let rows = credentials::list(&pool, Some(CredentialKind::Key))
             .await
             .unwrap();
         let info = row_to_info(&rows[0], &key);
         assert_eq!(info.key_type.as_deref(), Some("ssh-ed25519"));
-        assert!(info.key_fingerprint.as_deref().unwrap().starts_with("SHA256:"));
+        assert!(info
+            .key_fingerprint
+            .as_deref()
+            .unwrap()
+            .starts_with("SHA256:"));
     }
 
     #[tokio::test]
@@ -447,13 +457,12 @@ mod tests {
 
         credential_delete_inner(&pool, &key_id).await.unwrap();
 
-        let (auth, remaining_key): (String, Option<String>) = sqlx::query_as(
-            r#"SELECT "auth_method", "key_id" FROM host WHERE "id" = ?"#,
-        )
-        .bind(&host_id)
-        .fetch_one(&pool)
-        .await
-        .unwrap();
+        let (auth, remaining_key): (String, Option<String>) =
+            sqlx::query_as(r#"SELECT "auth_method", "key_id" FROM host WHERE "id" = ?"#)
+                .bind(&host_id)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
         assert_eq!(auth, "none");
         assert_eq!(remaining_key, None);
     }
@@ -493,13 +502,12 @@ mod tests {
 
         credential_delete_inner(&pool, &password_id).await.unwrap();
 
-        let (auth, remaining_password): (String, Option<String>) = sqlx::query_as(
-            r#"SELECT "auth_method", "password_id" FROM host WHERE "id" = ?"#,
-        )
-        .bind(&host_id)
-        .fetch_one(&pool)
-        .await
-        .unwrap();
+        let (auth, remaining_password): (String, Option<String>) =
+            sqlx::query_as(r#"SELECT "auth_method", "password_id" FROM host WHERE "id" = ?"#)
+                .bind(&host_id)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
         assert_eq!(auth, "none");
         assert_eq!(remaining_password, None);
     }

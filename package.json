@@ -16,6 +16,7 @@
     "test": "cargo test --manifest-path tauri/Cargo.toml"
   },
   "dependencies": {
+    "@tauri-apps/plugin-clipboard-manager": "~2.3.2",
     "nuxt": "^4.5.2",
     "vue": "^3.5.41",
     "vue-router": "^5.2.0"

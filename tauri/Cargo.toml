@@ -39,6 +39,7 @@ llama-cpp-2 = "0.1"
 hf-hub = "1"
 encoding_rs = "0.8"
 tauri-plugin-process = "2"
+tauri-plugin-clipboard-manager = "2"
 
 [target.'cfg(target_os = "android")'.dependencies]
 llama-cpp-2 = { version = "0.1", features = ["static-stdcxx"] }

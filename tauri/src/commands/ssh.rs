@@ -354,10 +354,13 @@ pub async fn ssh_connect(
             let key_data = credentials::retrieve_value(&state.db, &master_key.0, &credential_id)
                 .await
                 .map_err(SshError::Encryption)?;
-            let passphrase =
-                credentials::retrieve_key_passphrase_value(&state.db, &master_key.0, &credential_id)
-                    .await
-                    .map_err(SshError::Encryption)?;
+            let passphrase = credentials::retrieve_key_passphrase_value(
+                &state.db,
+                &master_key.0,
+                &credential_id,
+            )
+            .await
+            .map_err(SshError::Encryption)?;
             let key = parse_private_key(&key_data, passphrase.as_deref())?;
             let key_with_hash = PrivateKeyWithHashAlg::new(Arc::new(key), Some(HashAlg::Sha256));
             let result = handle

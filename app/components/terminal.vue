@@ -2,6 +2,7 @@
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import { ArrowDownIcon, ChevronDownIcon, ChevronUpIcon, XIcon } from '@lucide/vue';
 import { listen } from '@tauri-apps/api/event';
+import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { FitAddon } from '@xterm/addon-fit';
 import { SearchAddon } from '@xterm/addon-search';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
@@ -82,7 +83,7 @@ terminal.attachCustomKeyEventHandler((e) => {
     e.preventDefault();
     const selection = terminal.getSelection();
     if (selection) {
-      navigator.clipboard.writeText(selection).catch(() => {});
+      writeText(selection).catch(() => {});
     } else {
       terminal.input('\x03');
     }
@@ -90,8 +91,7 @@ terminal.attachCustomKeyEventHandler((e) => {
   }
   if (mod && e.key.toLowerCase() === 'v') {
     e.preventDefault();
-    navigator.clipboard
-      .readText()
+    readText()
       .then((text) => text && terminal.paste(text))
       .catch(() => {});
     return false;
@@ -102,7 +102,7 @@ terminal.attachCustomKeyEventHandler((e) => {
 terminal.onSelectionChange(() => {
   if (!copyOnSelect.value) return;
   const selection = terminal.getSelection();
-  if (selection) navigator.clipboard.writeText(selection).catch(() => {});
+  if (selection) writeText(selection).catch(() => {});
 });
 
 const scrolledUp = ref(false);

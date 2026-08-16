@@ -178,7 +178,9 @@ pub async fn host_create(
     db: tauri::State<'_, SharedPool>,
     input: HostInput,
 ) -> Result<Host, String> {
-    host_create_inner(db.inner(), input).await.map_err(Into::into)
+    host_create_inner(db.inner(), input)
+        .await
+        .map_err(Into::into)
 }
 
 async fn host_create_inner(pool: &SqlitePool, input: HostInput) -> Result<Host, HostError> {
@@ -415,7 +417,10 @@ struct ImportData {
 
 /// Resolve a credential id that must exist in this DB, returning `None` when it
 /// does not (dangling references import as `NULL`).
-async fn existing_credential_id(pool: &SqlitePool, id: Option<&str>) -> Result<Option<String>, HostError> {
+async fn existing_credential_id(
+    pool: &SqlitePool,
+    id: Option<&str>,
+) -> Result<Option<String>, HostError> {
     let Some(id) = id else {
         return Ok(None);
     };
@@ -451,8 +456,7 @@ pub async fn host_import(
     db: tauri::State<'_, SharedPool>,
     json: String,
 ) -> Result<ImportResult, String> {
-    let data: ImportData =
-        serde_json::from_str(&json).map_err(|e| format!("invalid JSON: {e}"))?;
+    let data: ImportData = serde_json::from_str(&json).map_err(|e| format!("invalid JSON: {e}"))?;
 
     let pool = db.inner();
     let mut imported = 0usize;
@@ -678,10 +682,9 @@ mod tests {
     fn host_update_deserializes_null_as_clear() {
         // Mirrors the exact JSON the frontend sends when switching a host to
         // "none" — `null` must become `Some(None)` (clear), not `None` (keep).
-        let update: HostUpdate = serde_json::from_str(
-            r#"{"authMethod":"none","keyId":null,"passwordId":null}"#,
-        )
-        .unwrap();
+        let update: HostUpdate =
+            serde_json::from_str(r#"{"authMethod":"none","keyId":null,"passwordId":null}"#)
+                .unwrap();
         assert_eq!(update.auth_method.as_deref(), Some("none"));
         assert_eq!(update.key_id, Some(None));
         assert_eq!(update.password_id, Some(None));

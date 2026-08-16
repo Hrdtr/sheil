@@ -85,14 +85,14 @@ pub async fn create(
     let id = crate::db::new_table_row_id();
     let (ciphertext, nonce) = crypto::encrypt(master_key, value.as_bytes());
 
-    let (passphrase_ciphertext, passphrase_nonce) = match key_passphrase_value.filter(|p| !p.is_empty())
-    {
-        Some(passphrase) => {
-            let (ct, nonce) = crypto::encrypt(master_key, passphrase.as_bytes());
-            (Some(ct), Some(nonce.to_vec()))
-        }
-        None => (None, None),
-    };
+    let (passphrase_ciphertext, passphrase_nonce) =
+        match key_passphrase_value.filter(|p| !p.is_empty()) {
+            Some(passphrase) => {
+                let (ct, nonce) = crypto::encrypt(master_key, passphrase.as_bytes());
+                (Some(ct), Some(nonce.to_vec()))
+            }
+            None => (None, None),
+        };
 
     let tags_json = serde_json::to_string(tags).map_err(|e| e.to_string())?;
 
@@ -155,10 +155,8 @@ pub async fn update(
         .try_get("key_passphrase_encrypted_value")
         .ok()
         .flatten();
-    let current_passphrase_nonce: Option<Vec<u8>> = existing
-        .try_get("key_passphrase_nonce")
-        .ok()
-        .flatten();
+    let current_passphrase_nonce: Option<Vec<u8>> =
+        existing.try_get("key_passphrase_nonce").ok().flatten();
     let current_group: Option<String> = existing.try_get("group").ok().flatten();
     let current_tags_json: String = existing
         .try_get("tags")
@@ -224,13 +222,12 @@ pub async fn retrieve_value(
     master_key: &[u8; MASTER_KEY_SIZE],
     id: &str,
 ) -> Result<String, String> {
-    let row: Option<(Vec<u8>, Vec<u8>)> = sqlx::query_as(
-        r#"SELECT "encrypted_value", "nonce" FROM credential WHERE "id" = ?"#,
-    )
-    .bind(id)
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| format!("database error: {e}"))?;
+    let row: Option<(Vec<u8>, Vec<u8>)> =
+        sqlx::query_as(r#"SELECT "encrypted_value", "nonce" FROM credential WHERE "id" = ?"#)
+            .bind(id)
+            .fetch_optional(pool)
+            .await
+            .map_err(|e| format!("database error: {e}"))?;
 
     let (ciphertext, nonce_bytes) = row.ok_or_else(|| "credential not found".to_string())?;
 
@@ -295,27 +292,23 @@ pub async fn list(
     kind: Option<CredentialKind>,
 ) -> Result<Vec<CredentialRow>, String> {
     let rows = match kind {
-        Some(kind) => {
-            sqlx::query(
-                r#"SELECT "id", "name", "kind", "encrypted_value", "nonce",
+        Some(kind) => sqlx::query(
+            r#"SELECT "id", "name", "kind", "encrypted_value", "nonce",
                           "group", "tags", "created_at", "updated_at"
                    FROM credential WHERE "kind" = ? ORDER BY "group", "name""#,
-            )
-            .bind(kind.as_str())
-            .fetch_all(pool)
-            .await
-            .map_err(|e| format!("database error: {e}"))?
-        }
-        None => {
-            sqlx::query(
-                r#"SELECT "id", "name", "kind", "encrypted_value", "nonce",
+        )
+        .bind(kind.as_str())
+        .fetch_all(pool)
+        .await
+        .map_err(|e| format!("database error: {e}"))?,
+        None => sqlx::query(
+            r#"SELECT "id", "name", "kind", "encrypted_value", "nonce",
                           "group", "tags", "created_at", "updated_at"
                    FROM credential ORDER BY "group", "name""#,
-            )
-            .fetch_all(pool)
-            .await
-            .map_err(|e| format!("database error: {e}"))?
-        }
+        )
+        .fetch_all(pool)
+        .await
+        .map_err(|e| format!("database error: {e}"))?,
     };
 
     Ok(rows.iter().map(row_to_credential).collect())
@@ -420,9 +413,7 @@ mod tests {
         assert_eq!(keys.len(), 1);
         assert_eq!(keys[0].kind, CredentialKind::Key);
 
-        let passwords = list(&pool, Some(CredentialKind::Password))
-            .await
-            .unwrap();
+        let passwords = list(&pool, Some(CredentialKind::Password)).await.unwrap();
         assert_eq!(passwords.len(), 1);
         assert_eq!(passwords[0].kind, CredentialKind::Password);
     }
@@ -509,9 +500,18 @@ mod tests {
         .unwrap();
 
         // Replace the key material while leaving the passphrase blank (None).
-        update(&pool, &key, &id, None, Some("new-key-data"), None, None, None)
-            .await
-            .unwrap();
+        update(
+            &pool,
+            &key,
+            &id,
+            None,
+            Some("new-key-data"),
+            None,
+            None,
+            None,
+        )
+        .await
+        .unwrap();
 
         let value = retrieve_value(&pool, &key, &id).await.unwrap();
         assert_eq!(value, "new-key-data");

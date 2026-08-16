@@ -130,26 +130,35 @@ fn row_to_entry(
 }
 
 async fn set_inner(pool: &SqlitePool, key: &str, value: &str) -> Result<(), String> {
-    sqlx::query(r#"UPDATE setting SET "value" = ?, "updated_at" = datetime('now') WHERE "key" = ?"#)
-        .bind(value)
-        .bind(key)
-        .execute(pool)
-        .await
-        .map_err(|e| format!("database error: {e}"))?;
+    sqlx::query(
+        r#"UPDATE setting SET "value" = ?, "updated_at" = datetime('now') WHERE "key" = ?"#,
+    )
+    .bind(value)
+    .bind(key)
+    .execute(pool)
+    .await
+    .map_err(|e| format!("database error: {e}"))?;
     Ok(())
 }
 
 async fn set_many_inner(pool: &SqlitePool, entries: &[SettingInput]) -> Result<(), String> {
-    let mut tx = pool.begin().await.map_err(|e| format!("database error: {e}"))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|e| format!("database error: {e}"))?;
     for entry in entries {
-        sqlx::query(r#"UPDATE setting SET "value" = ?, "updated_at" = datetime('now') WHERE "key" = ?"#)
-            .bind(&entry.value)
-            .bind(&entry.key)
-            .execute(&mut *tx)
-            .await
-            .map_err(|e| format!("database error: {e}"))?;
+        sqlx::query(
+            r#"UPDATE setting SET "value" = ?, "updated_at" = datetime('now') WHERE "key" = ?"#,
+        )
+        .bind(&entry.value)
+        .bind(&entry.key)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| format!("database error: {e}"))?;
     }
-    tx.commit().await.map_err(|e| format!("database error: {e}"))?;
+    tx.commit()
+        .await
+        .map_err(|e| format!("database error: {e}"))?;
     Ok(())
 }
 
@@ -163,7 +172,10 @@ async fn reset_inner(pool: &SqlitePool, key: &str) -> Result<(), String> {
 }
 
 async fn reset_many_inner(pool: &SqlitePool, keys: &[String]) -> Result<(), String> {
-    let mut tx = pool.begin().await.map_err(|e| format!("database error: {e}"))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|e| format!("database error: {e}"))?;
     for key in keys {
         sqlx::query(r#"UPDATE setting SET "value" = "default_value", "updated_at" = datetime('now') WHERE "key" = ?"#)
             .bind(key)
@@ -171,7 +183,9 @@ async fn reset_many_inner(pool: &SqlitePool, keys: &[String]) -> Result<(), Stri
             .await
             .map_err(|e| format!("database error: {e}"))?;
     }
-    tx.commit().await.map_err(|e| format!("database error: {e}"))?;
+    tx.commit()
+        .await
+        .map_err(|e| format!("database error: {e}"))?;
     Ok(())
 }
 
@@ -184,7 +198,9 @@ async fn reset_all_inner(pool: &SqlitePool) -> Result<(), String> {
 }
 
 #[command]
-pub async fn settings_get_all(db: tauri::State<'_, SqlitePool>) -> Result<Vec<SettingEntry>, String> {
+pub async fn settings_get_all(
+    db: tauri::State<'_, SqlitePool>,
+) -> Result<Vec<SettingEntry>, String> {
     get_all_inner(db.inner()).await
 }
 
@@ -348,7 +364,10 @@ mod tests {
         assert_eq!(all.len(), seeds().len());
 
         for (key, _, _) in seeds() {
-            assert!(all.iter().any(|e| e.key == key), "missing seeded key: {key}");
+            assert!(
+                all.iter().any(|e| e.key == key),
+                "missing seeded key: {key}"
+            );
         }
         for entry in &all {
             assert!(!entry.created_at.is_empty());
@@ -478,7 +497,9 @@ mod tests {
         let pool = db::test_pool().await;
         seed_settings(&pool).await.unwrap();
 
-        set_inner(&pool, "ssh.keepalive_interval", "60").await.unwrap();
+        set_inner(&pool, "ssh.keepalive_interval", "60")
+            .await
+            .unwrap();
         set_inner(&pool, "ssh.connect_timeout", "30").await.unwrap();
         reset_all_inner(&pool).await.unwrap();
 
@@ -527,11 +548,19 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            get_inner(&pool, "ai.temperature").await.unwrap().unwrap().value,
+            get_inner(&pool, "ai.temperature")
+                .await
+                .unwrap()
+                .unwrap()
+                .value,
             "0.2"
         );
         assert_eq!(
-            get_inner(&pool, "ai.max_tokens").await.unwrap().unwrap().value,
+            get_inner(&pool, "ai.max_tokens")
+                .await
+                .unwrap()
+                .unwrap()
+                .value,
             "32"
         );
     }

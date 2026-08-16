@@ -43,6 +43,7 @@ pub fn run() {
     std::env::set_var("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_os::init())
