@@ -68,7 +68,7 @@ onBeforeUnmount(() => {
         <SidebarTrigger
           variant="secondary"
           class="shrink-0 transition-all duration-200 ease-linear"
-          :class="!sidebarOpen && isMacos && !isFullscreen ? 'ml-20' : ''"
+          :class="!sidebarOpen && isMacos && !isFullscreen ? 'ml-19.5' : ''"
         />
         <!-- Tab bar -->
         <TabBar

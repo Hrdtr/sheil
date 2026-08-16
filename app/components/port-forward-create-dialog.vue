@@ -213,7 +213,7 @@ const isValid = computed(() => {
       </div>
 
       <ResponsiveModalFooter :class="kind === 'drawer' ? 'flex-col-reverse' : ''">
-        <Button variant="ghost" @click="open = false">Cancel</Button>
+        <Button variant="outline" @click="open = false">Cancel</Button>
         <Button :disabled="!isValid || submitting" @click="handleSubmit">
           {{ submitting ? 'Starting…' : 'Start Forward' }}
         </Button>

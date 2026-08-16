@@ -86,7 +86,7 @@ async function handleImport(event: Event) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel variant="ghost">Cancel</AlertDialogCancel>
+            <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
             <AlertDialogAction @click="clearRecent">Clear</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -116,7 +116,7 @@ async function handleImport(event: Event) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel variant="ghost">Cancel</AlertDialogCancel>
+            <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
             <AlertDialogAction :disabled="clearingKnownHosts" @click="handleClearKnownHosts"
               >Clear</AlertDialogAction
             >

@@ -537,7 +537,7 @@ const breadcrumbs = computed(() => {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel variant="ghost">Cancel</AlertDialogCancel>
+          <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
           <AlertDialogAction variant="destructive" @click="handleDelete">Delete</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

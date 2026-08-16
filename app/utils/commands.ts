@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 
 // ── Hosts ───────────────────────────────────────────────────────────────
 
-type AuthMethod = 'password' | 'key';
+type AuthMethod = 'none' | 'password' | 'key';
 type Protocol = 'ssh';
 
 interface Host {
@@ -14,7 +14,8 @@ interface Host {
   protocol: Protocol;
   group: string | null;
   authMethod: AuthMethod;
-  keyName: string | null;
+  keyId: string | null;
+  passwordId: string | null;
   tags: string[];
   hasPassword: boolean;
   createdAt: string;
@@ -29,9 +30,8 @@ interface HostInput {
   protocol?: Protocol;
   group?: string | null;
   authMethod?: AuthMethod;
-  keyName?: string | null;
-  /** Plaintext password — encrypted and stored in SQLite. */
-  password?: string | null;
+  keyId?: string | null;
+  passwordId?: string | null;
   tags?: string[];
 }
 
@@ -43,8 +43,8 @@ interface HostUpdate {
   protocol?: Protocol;
   group?: string | null;
   authMethod?: AuthMethod;
-  keyName?: string | null;
-  password?: string | null;
+  keyId?: string | null;
+  passwordId?: string | null;
   tags?: string[];
 }
 
@@ -69,11 +69,6 @@ const host = {
     return invoke('host_delete', { id });
   },
 
-  /** Decrypts and returns a host's stored password for SSH connection. */
-  resolvePassword: async (id: string): Promise<string> => {
-    return invoke<string>('host_resolve_password', { id });
-  },
-
   export: async (): Promise<string> => {
     return invoke<string>('host_export');
   },
@@ -88,12 +83,6 @@ const host = {
 // ── SSH ─────────────────────────────────────────────────────────────────
 
 type SshAuth = { type: 'password'; value: string } | { type: 'key'; value: string };
-
-interface ImportedKey {
-  name: string;
-  keyType: string;
-  fingerprint: string;
-}
 
 const ssh = {
   connect: async (
@@ -116,18 +105,6 @@ const ssh = {
 
   disconnect: async (sessionId: string): Promise<void> => {
     return invoke('ssh_disconnect', { sessionId });
-  },
-
-  importKey: async (name: string, keyData: string, passphrase?: string): Promise<ImportedKey> => {
-    return invoke<ImportedKey>('ssh_import_key', { name, keyData, passphrase: passphrase || null });
-  },
-
-  listKeys: async (): Promise<ImportedKey[]> => {
-    return invoke<ImportedKey[]>('ssh_list_keys');
-  },
-
-  deleteKey: async (name: string): Promise<void> => {
-    return invoke('ssh_delete_key', { name });
   },
 
   listSessions: async (): Promise<string[]> => {
@@ -153,6 +130,49 @@ const ssh = {
   clearKnownHosts: async (): Promise<number> => {
     return invoke<number>('known_host_clear_all');
   },
+};
+
+// ── Credentials ─────────────────────────────────────────────────────────
+
+type CredentialKind = 'key' | 'password';
+
+interface Credential {
+  id: string;
+  name: string;
+  kind: CredentialKind;
+  keyType: string | null;
+  keyFingerprint: string | null;
+  group: string | null;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CredentialInput {
+  name: string;
+  kind: CredentialKind;
+  value: string;
+  keyPassphraseValue?: string | null;
+  group?: string | null;
+  tags?: string[];
+}
+
+interface CredentialUpdate {
+  name?: string | null;
+  value?: string | null;
+  keyPassphraseValue?: string | null;
+  group?: string | null;
+  tags?: string[];
+}
+
+const credential = {
+  create: (input: CredentialInput) => invoke<Credential>('credential_create', { input }),
+  list: (kind?: CredentialKind | null) =>
+    invoke<Credential[]>('credential_list', { kind: kind ?? null }),
+  update: (id: string, update: CredentialUpdate) =>
+    invoke<Credential>('credential_update', { id, update }),
+  delete: (id: string) => invoke('credential_delete', { id }),
+  resolve: (id: string) => invoke<string>('credential_resolve', { id }),
 };
 
 // ── Port Forwarding ──────────────────────────────────────────────────────
@@ -418,6 +438,7 @@ const settings = {
 export const commands = {
   host,
   ssh,
+  credential,
   portForward,
   sftp,
   ai,

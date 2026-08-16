@@ -12,6 +12,7 @@
     "fmt:check": "oxfmt --check",
     "lint": "oxlint",
     "typecheck": "nuxi typecheck",
+    "check": "cargo clippy --manifest-path tauri/Cargo.toml --all-targets -- -Wclippy::pedantic",
     "test": "cargo test --manifest-path tauri/Cargo.toml"
   },
   "dependencies": {

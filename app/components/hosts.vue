@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { KeyIcon } from '@lucide/vue';
-
 const {
   hosts,
-  refreshHosts,
   createHost: _createHost,
   updateHost: _updateHost,
   deleteHost: _deleteHost,
@@ -22,25 +19,27 @@ const formState = ref<HostCreateInput | HostUpdateInput>({
   protocol: 'ssh',
   group: '',
   authMethod: 'password',
-  keyName: '',
-  password: '',
+  keyId: null,
+  passwordId: null,
   tags: [],
 });
-const clearPassword = ref(false);
-const storedHost = ref<{
-  authMethod: string;
-  keyName: string | null;
-  hasPassword: boolean;
-} | null>(null);
 
-const sshKeysManagerRef = useTemplateRef('sshKeysManager');
+watch(
+  () => formState.value.authMethod,
+  (authMethod) => {
+    if (authMethod === 'none') {
+      formState.value.keyId = null;
+      formState.value.passwordId = null;
+    }
+  },
+);
 
 const createHost = async () => {
-  const { name, host, username, authMethod, keyName } = formState.value;
+  const { name, host, username, authMethod, keyId } = formState.value;
   if (!name?.trim()) return;
   if (!host?.trim()) return;
   if (!username?.trim()) return;
-  if (authMethod === 'key' && !keyName?.trim()) return;
+  if (authMethod === 'key' && !keyId) return;
 
   try {
     await _createHost({
@@ -51,8 +50,8 @@ const createHost = async () => {
       protocol: 'ssh',
       group: formState.value.group?.trim() || undefined,
       authMethod: formState.value.authMethod,
-      keyName: authMethod === 'key' ? keyName?.trim() : undefined,
-      password: authMethod === 'password' ? formState.value.password || undefined : undefined,
+      keyId: authMethod === 'key' ? (keyId ?? null) : null,
+      passwordId: authMethod === 'password' ? (formState.value.passwordId ?? null) : null,
       tags: formState.value.tags,
     } as HostCreateInput);
     toast.success('Host created');
@@ -64,23 +63,14 @@ const createHost = async () => {
 
 const updateHostId = ref<string | null>(null);
 const updateHost = async () => {
-  const { name, host, username, authMethod, keyName } = formState.value;
+  const { name, host, username, authMethod, keyId } = formState.value;
   if (!updateHostId.value) return;
   if (!name?.trim()) return;
   if (!host?.trim()) return;
   if (!username?.trim()) return;
-  if (authMethod === 'key' && !keyName?.trim()) return;
+  if (authMethod === 'key' && !keyId) return;
 
   try {
-    let passwordPayload: string | undefined;
-    if (authMethod === 'password') {
-      if (clearPassword.value) {
-        passwordPayload = '';
-      } else if (formState.value.password) {
-        passwordPayload = formState.value.password;
-      }
-    }
-
     await _updateHost(updateHostId.value, {
       name: name.trim() || undefined,
       host: host.trim() || undefined,
@@ -89,8 +79,8 @@ const updateHost = async () => {
       protocol: 'ssh',
       group: formState.value.group?.trim() || undefined,
       authMethod: formState.value.authMethod,
-      keyName: authMethod === 'key' ? keyName?.trim() : undefined,
-      password: passwordPayload,
+      keyId: authMethod === 'key' ? (keyId ?? null) : null,
+      passwordId: authMethod === 'password' ? (formState.value.passwordId ?? null) : null,
       tags: formState.value.tags,
     } as HostUpdateInput);
     toast.success('Host updated');
@@ -140,12 +130,10 @@ const deleteHost = async () => {
           protocol: 'ssh',
           group: '',
           authMethod: 'password',
-          keyName: '',
-          password: '',
+          keyId: null,
+          passwordId: null,
           tags: [],
         };
-        clearPassword = false;
-        storedHost = null;
         formModalOpen = true;
       },
       updateHost: (host: NonNullable<typeof hosts>[number]) => {
@@ -158,15 +146,9 @@ const deleteHost = async () => {
           protocol: host.protocol,
           group: host.group ?? '',
           authMethod: host.authMethod,
-          keyName: host.keyName ?? '',
-          password: '',
+          keyId: host.keyId ?? null,
+          passwordId: host.passwordId ?? null,
           tags: host.tags ?? [],
-        };
-        clearPassword = false;
-        storedHost = {
-          authMethod: host.authMethod,
-          keyName: host.keyName ?? null,
-          hasPassword: host.hasPassword,
         };
         formModalOpen = true;
       },
@@ -213,21 +195,10 @@ const deleteHost = async () => {
             <Input id="host-port" v-model.number="formState.port" type="number" />
           </Field>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <Field>
-            <FieldLabel for="host-username">Username</FieldLabel>
-            <Input id="host-username" v-model="formState.username" placeholder="root" required />
-          </Field>
-          <Field>
-            <FieldLabel for="host-group">Group</FieldLabel>
-            <Input
-              id="host-group"
-              :model-value="formState.group || undefined"
-              @update:model-value="formState.group = String($event)"
-              placeholder="Optional"
-            />
-          </Field>
-        </div>
+        <Field>
+          <FieldLabel for="host-username">Username</FieldLabel>
+          <Input id="host-username" v-model="formState.username" placeholder="root" required />
+        </Field>
         <Field>
           <FieldLabel for="host-auth">Authentication Method</FieldLabel>
           <Select v-model="formState.authMethod">
@@ -236,6 +207,7 @@ const deleteHost = async () => {
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
+                <SelectItem value="none">None</SelectItem>
                 <SelectItem value="password">Password</SelectItem>
                 <SelectItem value="key">SSH Key</SelectItem>
               </SelectGroup>
@@ -243,44 +215,29 @@ const deleteHost = async () => {
           </Select>
         </Field>
         <Field v-if="formState.authMethod === 'password'">
-          <FieldLabel for="host-password">
-            Password
-            <span v-if="storedHost" class="text-muted-foreground ml-1"
-              >({{ storedHost.hasPassword ? 'saved — leave blank to keep' : 'none saved' }})</span
-            >
-          </FieldLabel>
-          <Input
-            id="host-password"
-            :model-value="formState.password || undefined"
-            @update:model-value="formState.password = String($event)"
-            type="password"
-            placeholder="••••••••"
-            :disabled="clearPassword"
+          <FieldLabel>Password</FieldLabel>
+          <SelectCredential
+            v-model="formState.passwordId"
+            kind="password"
+            placeholder="Select a password…"
           />
-          <div v-if="storedHost?.hasPassword" class="flex items-center gap-2">
-            <Checkbox id="clear-password" v-model="clearPassword" />
-            <Label for="clear-password" class="text-sm text-muted-foreground cursor-pointer">
-              Remove stored password
-            </Label>
-          </div>
         </Field>
         <Field v-if="formState.authMethod === 'key'">
-          <FieldLabel for="host-key-name">SSH Key</FieldLabel>
-          <Button
-            id="host-key-name"
-            variant="outline"
-            class="w-full justify-start font-normal"
-            type="button"
-            data-slot="select-trigger"
-            @click="sshKeysManagerRef?.open()"
-          >
-            <KeyIcon class="size-4" />
-            {{ formState.keyName || 'Select a key…' }}
-          </Button>
+          <FieldLabel>SSH Key</FieldLabel>
+          <SelectCredential v-model="formState.keyId" kind="key" placeholder="Select a key…" />
+        </Field>
+        <Field>
+          <FieldLabel for="host-group">Group</FieldLabel>
+          <Input
+            id="host-group"
+            :model-value="formState.group || undefined"
+            @update:model-value="formState.group = String($event)"
+            placeholder="Optional"
+          />
         </Field>
         <Field>
           <FieldLabel>Tags</FieldLabel>
-          <TagsInput v-model="formState.tags" class="py-2" data-slot="tags-input-wrapper">
+          <TagsInput v-model="formState.tags" class="py-1.75" data-slot="tags-input-wrapper">
             <TagsInputItem v-for="tag in formState.tags" :key="tag" :value="tag">
               <TagsInputItemText>{{ tag }}</TagsInputItemText>
               <TagsInputItemDelete />
@@ -294,7 +251,7 @@ const deleteHost = async () => {
 
       <ResponsiveModalFooter :class="kind === 'drawer' ? 'flex-col-reverse' : ''">
         <ResponsiveModalClose as-child>
-          <Button variant="ghost">Cancel</Button>
+          <Button variant="outline">Cancel</Button>
         </ResponsiveModalClose>
         <Button @click="() => formModalSubmitButton?.click()">{{
           updateHostId ? 'Update' : 'Create'
@@ -308,26 +265,13 @@ const deleteHost = async () => {
       <AlertDialogHeader>
         <AlertDialogTitle>Delete host?</AlertDialogTitle>
         <AlertDialogDescription>
-          The host configuration and its stored password will be permanently deleted.
+          The host configuration will be permanently deleted.
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel variant="ghost">Cancel</AlertDialogCancel>
+        <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
         <AlertDialogAction @click="deleteHost" variant="destructive">Delete</AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
-
-  <SshKeysManager
-    ref="sshKeysManager"
-    selectable
-    @select="formState.keyName = $event"
-    @deleted="
-      () => {
-        formState.authMethod = 'password';
-        formState.password = '';
-        refreshHosts();
-      }
-    "
-  />
 </template>

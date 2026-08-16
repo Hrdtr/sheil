@@ -9,21 +9,8 @@ use sqlx::SqlitePool;
 use tauri::{command, Emitter};
 use tokio::sync::Mutex;
 
-use crate::secrets;
+use crate::credentials;
 use crate::MasterKey;
-
-/// Service prefix for SSH key credentials — `sheil.ssh_key.<name>`.
-const SSH_KEY_SERVICE_PREFIX: &str = "sheil.ssh_key.";
-
-fn ssh_key_service(name: &str) -> String {
-    let service = format!("{SSH_KEY_SERVICE_PREFIX}{name}");
-    service
-}
-
-fn ssh_key_passphrase_service(name: &str) -> String {
-    let service = format!("{SSH_KEY_SERVICE_PREFIX}{name}.passphrase");
-    service
-}
 
 pub struct SshState {
     sessions: Mutex<HashMap<String, client::Handle<Client>>>,
@@ -228,14 +215,6 @@ pub enum SshAuth {
     Key(String),
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ImportedKeyInfo {
-    name: String,
-    key_type: String,
-    fingerprint: String,
-}
-
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct SshOutputEvent {
@@ -244,7 +223,7 @@ struct SshOutputEvent {
 }
 
 #[derive(Debug, thiserror::Error)]
-enum SshError {
+pub(crate) enum SshError {
     #[error("SSH error: {0}")]
     Ssh(#[from] russh::Error),
     #[error("Key error: {0}")]
@@ -269,28 +248,10 @@ impl From<SshError> for String {
     }
 }
 
-async fn store_ssh_key(
-    pool: &SqlitePool,
-    master_key: &[u8; crate::crypto::MASTER_KEY_SIZE],
-    name: &str,
+pub(crate) fn parse_private_key(
     key_data: &str,
-) -> Result<(), SshError> {
-    secrets::store(pool, master_key, &ssh_key_service(name), key_data)
-        .await
-        .map_err(SshError::Encryption)
-}
-
-async fn retrieve_ssh_key(
-    pool: &SqlitePool,
-    master_key: &[u8; crate::crypto::MASTER_KEY_SIZE],
-    name: &str,
-) -> Result<String, SshError> {
-    secrets::retrieve(pool, master_key, &ssh_key_service(name))
-        .await
-        .map_err(SshError::Encryption)
-}
-
-fn parse_private_key(key_data: &str, passphrase: Option<&str>) -> Result<PrivateKey, SshError> {
+    passphrase: Option<&str>,
+) -> Result<PrivateKey, SshError> {
     let mut key = PrivateKey::from_openssh(key_data).map_err(|e| SshError::Key(e.to_string()))?;
     if key.is_encrypted() {
         let pw = passphrase
@@ -305,13 +266,13 @@ fn parse_private_key(key_data: &str, passphrase: Option<&str>) -> Result<Private
     }
 }
 
-fn key_fingerprint(key: &PrivateKey) -> String {
+pub(crate) fn key_fingerprint(key: &PrivateKey) -> String {
     key.fingerprint(HashAlg::Sha256).to_string()
 }
 
 /// Try to parse a key for listing. Encrypted keys still show their
 /// algorithm — only the fingerprint requires decryption.
-fn try_parse_key_info(key_data: &str) -> Option<(String, String)> {
+pub(crate) fn try_parse_key_info(key_data: &str) -> Option<(String, String)> {
     let key = PrivateKey::from_openssh(key_data).ok()?;
     let key_type = key.algorithm().to_string();
     if key.is_encrypted() {
@@ -389,15 +350,14 @@ pub async fn ssh_connect(
                 return Err(SshError::AuthFailed.into());
             }
         }
-        SshAuth::Key(key_name) => {
-            let key_data = retrieve_ssh_key(&state.db, &master_key.0, &key_name).await?;
-            let passphrase = secrets::retrieve(
-                &state.db,
-                &master_key.0,
-                &ssh_key_passphrase_service(&key_name),
-            )
-            .await
-            .ok();
+        SshAuth::Key(credential_id) => {
+            let key_data = credentials::retrieve_value(&state.db, &master_key.0, &credential_id)
+                .await
+                .map_err(SshError::Encryption)?;
+            let passphrase =
+                credentials::retrieve_key_passphrase_value(&state.db, &master_key.0, &credential_id)
+                    .await
+                    .map_err(SshError::Encryption)?;
             let key = parse_private_key(&key_data, passphrase.as_deref())?;
             let key_with_hash = PrivateKeyWithHashAlg::new(Arc::new(key), Some(HashAlg::Sha256));
             let result = handle
@@ -438,93 +398,6 @@ pub async fn ssh_disconnect(
         }
         None => Err(SshError::SessionNotFound(session_id).into()),
     }
-}
-
-#[command]
-pub async fn ssh_import_key(
-    state: tauri::State<'_, SshState>,
-    master_key: tauri::State<'_, MasterKey>,
-    name: String,
-    key_data: String,
-    passphrase: Option<String>,
-) -> Result<ImportedKeyInfo, String> {
-    let key = parse_private_key(&key_data, passphrase.as_deref()).map_err(|e| e.to_string())?;
-    let key_type = key.algorithm().to_string();
-    let fingerprint = key_fingerprint(&key);
-
-    store_ssh_key(&state.db, &master_key.0, &name, &key_data)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    if let Some(pw) = passphrase.filter(|p| !p.is_empty()) {
-        secrets::store(
-            &state.db,
-            &master_key.0,
-            &ssh_key_passphrase_service(&name),
-            &pw,
-        )
-        .await
-        .map_err(|e| SshError::Encryption(e).to_string())?;
-    }
-
-    log::info!("SSH key '{name}' imported (type: {key_type}, fingerprint: {fingerprint})");
-
-    Ok(ImportedKeyInfo {
-        name,
-        key_type,
-        fingerprint,
-    })
-}
-
-#[command]
-pub async fn ssh_list_keys(
-    state: tauri::State<'_, SshState>,
-    master_key: tauri::State<'_, MasterKey>,
-) -> Result<Vec<ImportedKeyInfo>, String> {
-    let rows: Vec<(String,)> =
-        sqlx::query_as(r#"SELECT "service" FROM credential WHERE "service" LIKE ?"#)
-            .bind(format!("{SSH_KEY_SERVICE_PREFIX}%"))
-            .fetch_all(&state.db)
-            .await
-            .map_err(SshError::from)?;
-
-    let mut keys = Vec::with_capacity(rows.len());
-    for (service,) in rows {
-        let key_name = service
-            .strip_prefix(SSH_KEY_SERVICE_PREFIX)
-            .unwrap_or(&service);
-        if let Ok(key_data) = secrets::retrieve(&state.db, &master_key.0, &service).await {
-            if let Some((key_type, fingerprint)) = try_parse_key_info(&key_data) {
-                keys.push(ImportedKeyInfo {
-                    name: key_name.to_string(),
-                    key_type,
-                    fingerprint,
-                });
-            }
-        }
-    }
-
-    Ok(keys)
-}
-
-#[command]
-pub async fn ssh_delete_key(state: tauri::State<'_, SshState>, name: String) -> Result<(), String> {
-    secrets::delete(&state.db, &ssh_key_service(&name))
-        .await
-        .map_err(|e| SshError::Encryption(e).to_string())?;
-    let _ = secrets::delete(&state.db, &ssh_key_passphrase_service(&name)).await;
-
-    // Clear the key reference from all hosts using it, fall back to password auth.
-    sqlx::query(
-        r#"UPDATE host SET "key_name" = NULL, "auth_method" = 'password' WHERE "key_name" = ?"#,
-    )
-    .bind(&name)
-    .execute(&state.db)
-    .await
-    .map_err(SshError::from)?;
-
-    log::info!("SSH key '{name}' deleted");
-    Ok(())
 }
 
 #[command]
@@ -758,28 +631,12 @@ mod tests {
     }
 
     #[test]
-    fn imported_key_info_shape() {
-        let info = ImportedKeyInfo {
-            name: "my-key".into(),
-            key_type: "ssh-ed25519".into(),
-            fingerprint: "SHA256:abc123".into(),
-        };
-        let json = serde_json::to_string(&info).unwrap();
-        assert!(json.contains("my-key"));
-    }
-
-    #[test]
     fn fingerprint_is_consistent() {
         let key = parse_private_key(ed25519_test_key(), None).unwrap();
         assert_eq!(
             key_fingerprint(&key),
             key_fingerprint(&parse_private_key(ed25519_test_key(), None).unwrap())
         );
-    }
-
-    #[test]
-    fn ssh_key_service_format() {
-        assert_eq!(ssh_key_service("my-key"), "sheil.ssh_key.my-key");
     }
 
     #[test]

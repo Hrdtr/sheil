@@ -1,15 +1,18 @@
 mod commands;
+mod credentials;
 mod crypto;
 mod db;
-mod secrets;
 
 use commands::ai::{
     ai_delete_model, ai_download_model, ai_generate, ai_is_loaded, ai_list_models, ai_load_model,
     ai_unload_model, AiState,
 };
+use commands::credentials::{
+    credential_create, credential_delete, credential_list, credential_resolve, credential_update,
+};
 use commands::hosts::{
-    host_create, host_delete, host_export, host_import, host_list, host_resolve,
-    host_resolve_password, host_update, SharedPool,
+    host_create, host_delete, host_export, host_import, host_list, host_resolve, host_update,
+    SharedPool,
 };
 use commands::port_forward::{
     port_forward_list, port_forward_start_dynamic, port_forward_start_local,
@@ -25,9 +28,8 @@ use commands::sftp::{
     sftp_upload, sftp_write_file, SftpState,
 };
 use commands::ssh::{
-    known_host_clear_all, ssh_close_channel, ssh_connect, ssh_delete_key, ssh_disconnect,
-    ssh_import_key, ssh_list_keys, ssh_list_sessions, ssh_open_channel, ssh_resize, ssh_write,
-    SshState,
+    known_host_clear_all, ssh_close_channel, ssh_connect, ssh_disconnect, ssh_list_sessions,
+    ssh_open_channel, ssh_resize, ssh_write, SshState,
 };
 use crypto::load_or_create_master_key;
 use tauri::Manager;
@@ -86,14 +88,15 @@ pub fn run() {
             host_resolve,
             host_update,
             host_delete,
-            host_resolve_password,
             host_export,
             host_import,
+            credential_create,
+            credential_list,
+            credential_update,
+            credential_delete,
+            credential_resolve,
             ssh_connect,
             ssh_disconnect,
-            ssh_import_key,
-            ssh_list_keys,
-            ssh_delete_key,
             ssh_list_sessions,
             ssh_open_channel,
             ssh_write,

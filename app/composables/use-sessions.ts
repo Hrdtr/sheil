@@ -65,19 +65,21 @@ function _useSessions() {
 
   /**
    * Resolve authentication payload for a given host config — either a
-   * key name or a decrypted password from secure storage.
+   * key credential id or a decrypted password from secure storage.
    */
   async function resolveAuth(
     hostConfig: Awaited<ReturnType<typeof commands.host.resolve>>,
   ): Promise<SshAuth> {
     if (hostConfig.authMethod === 'key') {
-      if (!hostConfig.keyName) {
+      if (!hostConfig.keyId) {
         throw new Error('No SSH key configured for this host');
       }
-      return { type: 'key', value: hostConfig.keyName };
+      return { type: 'key', value: hostConfig.keyId };
     }
 
-    const password = await commands.host.resolvePassword(hostConfig.id).catch(() => '');
+    const password = hostConfig.passwordId
+      ? await commands.credential.resolve(hostConfig.passwordId).catch(() => '')
+      : '';
     return { type: 'password', value: password };
   }
 

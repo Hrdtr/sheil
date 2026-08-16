@@ -125,13 +125,17 @@
     @apply font-sans;
   }
 
-  input:not([data-slot='command-input']),
+  input:not(:is([data-slot='combobox-input'], [data-slot='command-input'])),
   select,
   textarea,
   button[data-slot='select-trigger'],
   [data-slot='tags-input-wrapper'],
   [data-slot='command-input-wrapper'] > [data-slot='input-group'] {
     @apply bg-input/30! shadow-none!;
+  }
+
+  [data-slot='combobox-content'] [data-slot='input-group']:has([data-slot='combobox-input']) {
+    @apply m-0! rounded-b-none!;
   }
 
   button[data-slot='checkbox'] {

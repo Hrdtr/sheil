@@ -346,8 +346,8 @@ async function reconnect() {
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel @click="cancelClose">Cancel</AlertDialogCancel>
-        <AlertDialogAction @click="confirmClose" variant="destructive"
+        <AlertDialogCancel variant="outline" @click="cancelClose">Cancel</AlertDialogCancel>
+        <AlertDialogAction variant="destructive" @click="confirmClose"
           >Disconnect &amp; Quit</AlertDialogAction
         >
       </AlertDialogFooter>
@@ -364,8 +364,8 @@ async function reconnect() {
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel @click="cancelDisconnectTab">Cancel</AlertDialogCancel>
-        <AlertDialogAction @click="confirmDisconnectTab" variant="destructive">
+        <AlertDialogCancel variant="outline" @click="cancelDisconnectTab">Cancel</AlertDialogCancel>
+        <AlertDialogAction variant="destructive" @click="confirmDisconnectTab">
           Disconnect
         </AlertDialogAction>
       </AlertDialogFooter>

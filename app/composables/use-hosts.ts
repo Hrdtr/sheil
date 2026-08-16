@@ -64,17 +64,6 @@ function _useHosts() {
     return deletedHost;
   };
 
-  /**
-   * Resolve the stored password for a host + username combination.
-   *
-   * The password is decrypted from secure storage via the Rust backend.
-   * This does **not** refresh the host list since no configuration changes.
-   */
-  const resolveHostPassword: typeof commands.host.resolvePassword = async (id) => {
-    const password = await commands.host.resolvePassword(id);
-    return password;
-  };
-
   return {
     hosts,
     groupedHosts,
@@ -84,7 +73,6 @@ function _useHosts() {
     resolveHost,
     updateHost,
     deleteHost,
-    resolveHostPassword,
   };
 }
 

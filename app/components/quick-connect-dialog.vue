@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { KeyIcon } from '@lucide/vue';
-
 const open = defineModel<boolean>('open');
 
 const { groupedHosts } = useHosts();
@@ -9,10 +7,9 @@ const { connect, connectDirect } = useSessions();
 const passwordDialogOpen = ref(false);
 const password = ref('');
 const authMethod = ref<'password' | 'key'>('password');
-const keyName = ref('');
+const selectedKeyId = ref<string | null>(null);
 const pendingDirectHost = ref<{ host: string; port: number; username: string } | null>(null);
 
-const sshKeysManagerRef = useTemplateRef('sshKeysManager');
 const commandInputRef = useTemplateRef('commandInput');
 
 function parseInput(input: string): { host: string; port: number; username: string } | null {
@@ -93,7 +90,7 @@ function handleDirectConnect() {
   pendingDirectHost.value = d;
   password.value = '';
   authMethod.value = 'password';
-  keyName.value = '';
+  selectedKeyId.value = null;
   passwordDialogOpen.value = true;
 }
 
@@ -110,7 +107,7 @@ async function doConnect() {
   passwordDialogOpen.value = false;
   const auth =
     authMethod.value === 'key'
-      ? { type: 'key' as const, value: keyName.value }
+      ? { type: 'key' as const, value: selectedKeyId.value ?? '' }
       : { type: 'password' as const, value: password.value };
   connectDirect(host.host, host.port, host.username, auth).catch((error) => {
     toast.error(String(error));
@@ -204,29 +201,20 @@ async function doConnect() {
           />
         </Field>
         <Field v-if="authMethod === 'key'">
-          <FieldLabel for="direct-key-name">SSH Key</FieldLabel>
-          <Button
-            id="direct-key-name"
-            variant="outline"
-            class="w-full justify-start font-normal"
-            type="button"
-            @click="sshKeysManagerRef?.open()"
-          >
-            <KeyIcon class="size-4" />
-            {{ keyName || 'Select a key…' }}
-          </Button>
+          <FieldLabel>SSH Key</FieldLabel>
+          <SelectCredential v-model="selectedKeyId" kind="key" placeholder="Select a key…" />
         </Field>
       </div>
       <DialogFooter>
         <DialogClose as-child>
-          <Button variant="ghost">Cancel</Button>
+          <Button variant="outline">Cancel</Button>
         </DialogClose>
-        <Button :disabled="authMethod === 'key' && !keyName" @click="doConnect">Connect</Button>
+        <Button :disabled="authMethod === 'key' && !selectedKeyId" @click="doConnect">
+          Connect
+        </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
-
-  <SshKeysManager ref="sshKeysManager" selectable @select="keyName = $event" />
 </template>
 
 <style>
