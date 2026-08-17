@@ -48,10 +48,12 @@ const terminal = new Terminal({
 const terminalRef = ref(terminal);
 const sessionIdRef = toRef(props, 'sessionId');
 
-const { ghostSuggestion, ghostVisible, acceptSuggestion } = useAiCompletion(
-  terminalRef,
-  sessionIdRef,
-);
+const {
+  ghostSuggestion,
+  ghostVisible,
+  acceptSuggestion,
+  handleKeyboardEvent: handleAICompletionKeyboardEvent,
+} = useAiCompletion(terminalRef, sessionIdRef);
 
 function onAcceptSuggestion() {
   acceptSuggestion();
@@ -78,6 +80,8 @@ const { macOS } = useKbd();
 
 terminal.attachCustomKeyEventHandler((e) => {
   if (e.type !== 'keydown') return true;
+  if (handleAICompletionKeyboardEvent(e) === false) return false;
+
   const mod = macOS.value ? e.metaKey && !e.ctrlKey : e.ctrlKey && e.shiftKey;
   if (mod && e.key.toLowerCase() === 'c') {
     e.preventDefault();

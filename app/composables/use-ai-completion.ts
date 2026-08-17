@@ -23,7 +23,7 @@ function _useAiCompletion(terminal: Ref<Terminal | null>, sessionId: Ref<string 
     dismissSuggestion();
   }
 
-  function handleCustomKey(event: KeyboardEvent): boolean {
+  function handleKeyboardEvent(event: KeyboardEvent): boolean {
     if (event.type !== 'keydown') return true;
     if (!ghostVisible.value || !ghostSuggestion.value) return true;
     if (event.key === 'Tab' || event.key === 'ArrowRight') {
@@ -154,7 +154,6 @@ function _useAiCompletion(terminal: Ref<Terminal | null>, sessionId: Ref<string 
 
       if (t && sid) {
         dataDispose = t.onData(handleUserInput);
-        t.attachCustomKeyEventHandler(handleCustomKey);
         cursorDispose = t.onCursorMove(() => {
           if (ghostVisible.value) {
             const buffer = t.buffer.active;
@@ -175,6 +174,7 @@ function _useAiCompletion(terminal: Ref<Terminal | null>, sessionId: Ref<string 
     ghostVisible,
     acceptSuggestion,
     dismissSuggestion,
+    handleKeyboardEvent,
   };
 }
 
