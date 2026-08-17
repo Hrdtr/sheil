@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.7 (2026-08-17)
+
+### Bug Fixes
+
+- **terminal:** stop AI handler from clobbering paste handler (8c70c34)
+
 ## v0.1.6 (2026-08-16)
 
 ### Features
