@@ -1,5 +1,16 @@
 {
   "lsp": {
+    "rust-analyzer": {
+      "initialization_options": {
+        "rust": {
+          "analyzerTargetDir": true
+        },
+        "check": {
+          "command": "clippy",
+          "extraArgs": ["--", "-Wclippy::pedantic"]
+        }
+      }
+    },
     "oxlint": {
       "initialization_options": {
         "settings": {
@@ -92,6 +103,12 @@
         { "language_server": { "name": "oxfmt" } },
         { "code_action": "source.fixAll.oxc" }
       ]
+    },
+    "Rust": {
+      "format_on_save": "on",
+      "tab_size": 4,
+      "prettier": { "allowed": false },
+      "formatter": "language_server"
     },
     "SCSS": {
       "format_on_save": "on",
