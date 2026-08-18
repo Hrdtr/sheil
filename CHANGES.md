@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.8 (2026-08-18)
+
+### Features
+
+- add snippet management for saved terminal commands (3ee6efd)
+
 ## v0.1.7 (2026-08-17)
 
 ### Bug Fixes
