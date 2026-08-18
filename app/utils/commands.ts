@@ -175,6 +175,63 @@ const credential = {
   resolve: (id: string) => invoke<string>('credential_resolve', { id }),
 };
 
+// ── Snippets ─────────────────────────────────────────────────────────────
+
+interface Snippet {
+  id: string;
+  name: string;
+  command: string;
+  description: string | null;
+  group: string | null;
+  tags: string[];
+  hostId: string | null;
+  hostGroup: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SnippetInput {
+  name: string;
+  command: string;
+  description?: string | null;
+  group?: string | null;
+  tags?: string[];
+  hostId?: string | null;
+  hostGroup?: string | null;
+}
+
+interface SnippetUpdate {
+  name?: string;
+  command?: string;
+  description?: string | null;
+  group?: string | null;
+  tags?: string[];
+  hostId?: string | null;
+  hostGroup?: string | null;
+}
+
+const snippet = {
+  create: async (input: SnippetInput): Promise<Snippet> => {
+    return invoke<Snippet>('snippet_create', { input });
+  },
+
+  list: async (): Promise<Snippet[]> => {
+    return invoke<Snippet[]>('snippet_list');
+  },
+
+  resolve: async (id: string): Promise<Snippet> => {
+    return invoke<Snippet>('snippet_resolve', { id });
+  },
+
+  update: async (id: string, update: SnippetUpdate): Promise<Snippet> => {
+    return invoke<Snippet>('snippet_update', { id, update });
+  },
+
+  delete: async (id: string): Promise<void> => {
+    return invoke('snippet_delete', { id });
+  },
+};
+
 // ── Port Forwarding ──────────────────────────────────────────────────────
 
 type ForwardKind =
@@ -439,6 +496,7 @@ export const commands = {
   host,
   ssh,
   credential,
+  snippet,
   portForward,
   sftp,
   ai,

@@ -27,6 +27,9 @@ use commands::sftp::{
     sftp_list_dir, sftp_read_file, sftp_remove_dir, sftp_remove_file, sftp_rename, sftp_stat,
     sftp_upload, sftp_write_file, SftpState,
 };
+use commands::snippets::{
+    snippet_create, snippet_delete, snippet_list, snippet_resolve, snippet_update,
+};
 use commands::ssh::{
     known_host_clear_all, ssh_close_channel, ssh_connect, ssh_disconnect, ssh_list_sessions,
     ssh_open_channel, ssh_resize, ssh_write, SshState,
@@ -38,7 +41,7 @@ use tauri::Manager;
 pub struct MasterKey(pub [u8; crypto::MASTER_KEY_SIZE]);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-#[allow(clippy::missing_panics_doc)]
+#[allow(clippy::missing_panics_doc, clippy::too_many_lines)]
 pub fn run() {
     std::env::set_var("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1");
 
@@ -123,6 +126,11 @@ pub fn run() {
             sftp_write_file,
             sftp_download,
             sftp_upload,
+            snippet_create,
+            snippet_list,
+            snippet_resolve,
+            snippet_update,
+            snippet_delete,
             settings_get_all,
             settings_get,
             settings_set,

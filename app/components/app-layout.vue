@@ -5,17 +5,20 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { platform } from '@tauri-apps/plugin-os';
 import { breakpointsTailwind } from '@vueuse/core';
 
-const props = withDefaults(defineProps<{ sidebarOpen?: boolean }>(), { sidebarOpen: true });
-const emit = defineEmits<{ 'update:sidebar-open': [value: boolean] }>();
+const props = withDefaults(defineProps<{ sidebarOpen?: boolean }>(), {
+  sidebarOpen: true,
+});
+const emit = defineEmits<{
+  'update:sidebar-open': [value: boolean];
+}>();
 
 const { sessions, activeTabId, switchTab, reorder } = useSessions();
 const { settingsTabId } = useSettingsTab();
 const { panelOpen: pfOpen, forwards } = usePortForwarding();
 const { panelOpen: sftpOpen } = useSftp();
-
-const panelsOpen = computed(() => pfOpen.value || sftpOpen.value);
 const { md } = useBreakpoints(breakpointsTailwind);
 
+const panelsOpen = computed(() => pfOpen.value || sftpOpen.value);
 const isDesktop = computed(() => {
   const p = platform();
   return p !== 'android' && p !== 'ios';
@@ -49,9 +52,9 @@ onBeforeUnmount(() => {
 <template>
   <SidebarProvider
     data-tauri-drag-region
+    class="bg-sidebar text-sidebar-foreground"
     :open="sidebarOpen"
     @update:open="emit('update:sidebar-open', $event)"
-    class="bg-sidebar text-sidebar-foreground"
   >
     <AppSidebar class="**:data-[slot='sidebar-container']:ease-linear!" />
     <SidebarInset

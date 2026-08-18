@@ -9,5 +9,6 @@
   },
   "rust-analyzer.cargo.targetDir": true,
   "rust-analyzer.check.command": "clippy",
-  "rust-analyzer.check.extraArgs": ["--", "-Wclippy::pedantic"]
+  "rust-analyzer.check.extraArgs": ["--", "-Wclippy::pedantic"],
+  "git.enableCommitSigning": true
 }

@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import type { SidebarProps } from '@/components/ui/sidebar';
 import {
+  BracesIcon,
   EllipsisVerticalIcon,
   EditIcon,
+  FileCodeIcon,
   KeyIcon,
   LockIcon,
   MonitorIcon,
   PlusIcon,
-  SearchIcon,
   SettingsIcon,
+  SquareTerminalIcon,
   TrashIcon,
+  PlugZapIcon,
 } from '@lucide/vue';
 import { platform } from '@tauri-apps/plugin-os';
+import { useSidebar, type SidebarProps } from '@/components/ui/sidebar';
 
 const props = withDefaults(defineProps<SidebarProps>(), {
   variant: 'inset',
@@ -20,15 +23,17 @@ const props = withDefaults(defineProps<SidebarProps>(), {
 const { groupedHosts } = useHosts();
 const { connect, focusOrConnect, activeTabId } = useSessions();
 const { openSettings, settingsTabId } = useSettingsTab();
+const { setOpenMobile } = useSidebar();
 
 const openQuickConnectDialog = inject<() => void>('openQuickConnectDialog');
 
 const isMacos = platform() === 'macos';
 
-type SidebarView = 'hosts' | 'credentials';
+type SidebarView = 'hosts' | 'credentials' | 'snippets';
 const activeView = ref<SidebarView>('hosts');
 
 const credentialsPanelRef = useTemplateRef('credentialsPanel');
+const snippetsPanelRef = useTemplateRef('snippetsPanel');
 </script>
 
 <template>
@@ -64,6 +69,28 @@ const credentialsPanelRef = useTemplateRef('credentialsPanel');
               </TooltipTrigger>
               <TooltipContent side="right">
                 <p>Hosts</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="rounded-lg"
+                  :class="
+                    activeView === 'snippets'
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground'
+                  "
+                  aria-label="Snippets"
+                  @click="activeView = 'snippets'"
+                >
+                  <BracesIcon class="size-4.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Snippets</p>
               </TooltipContent>
             </Tooltip>
 
@@ -110,39 +137,31 @@ const credentialsPanelRef = useTemplateRef('credentialsPanel');
                 <p>Settings</p>
               </TooltipContent>
             </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <ColorModeToggle
-                  variant="ghost"
-                  size="icon"
-                  class="rounded-lg text-muted-foreground"
-                />
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>Toggle Theme</p>
-              </TooltipContent>
-            </Tooltip>
           </div>
         </div>
 
         <!-- Main column -->
         <div class="flex min-w-0 flex-1 flex-col" data-tauri-drag-region>
           <SidebarHeader
-            class="pt-[calc(--spacing(2)+1px)] md:pt-3 **:data-[slot='sidebar-group']:pl-0!"
+            class="pt-[calc(--spacing(2)+1px)] md:pt-3 **:data-[slot='sidebar-group']:pl-0! pb-0"
             data-tauri-drag-region
           >
             <SidebarGroup data-tauri-drag-region>
               <SidebarGroupContent class="flex flex-row items-center gap-2" data-tauri-drag-region>
                 <div class="relative flex-1" data-tauri-drag-region></div>
-                <div class="shrink-0 flex flex-row items-center gap-0.5" data-tauri-drag-region>
+                <div class="shrink-0 flex flex-row items-center gap-1" data-tauri-drag-region>
                   <Button
                     variant="secondary"
                     size="icon-sm"
                     class="shrink-0 rounded-lg"
-                    @click="openQuickConnectDialog"
+                    @click="
+                      () => {
+                        setOpenMobile(false);
+                        openQuickConnectDialog?.();
+                      }
+                    "
                   >
-                    <SearchIcon class="size-4" />
+                    <PlugZapIcon class="size-4" />
                   </Button>
 
                   <Button
@@ -155,7 +174,7 @@ const credentialsPanelRef = useTemplateRef('credentialsPanel');
                     <PlusIcon class="size-4.5" />
                   </Button>
 
-                  <DropdownMenu v-else>
+                  <DropdownMenu v-else-if="activeView === 'credentials'">
                     <DropdownMenuTrigger as-child>
                       <Button variant="secondary" size="icon-sm" class="shrink-0 rounded-lg">
                         <PlusIcon class="size-4.5" />
@@ -174,6 +193,26 @@ const credentialsPanelRef = useTemplateRef('credentialsPanel');
                       </DropdownMenuGroup>
                     </DropdownMenuContent>
                   </DropdownMenu>
+
+                  <DropdownMenu v-else>
+                    <DropdownMenuTrigger as-child>
+                      <Button variant="secondary" size="icon-sm" class="shrink-0 rounded-lg">
+                        <PlusIcon class="size-4.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent class="w-fit">
+                      <DropdownMenuGroup>
+                        <DropdownMenuItem @click="snippetsPanelRef?.openAdd()">
+                          <SquareTerminalIcon class="size-3.5" />
+                          <span>New Snippet</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem @click="snippetsPanelRef?.openTemplates()">
+                          <FileCodeIcon class="size-3.5" />
+                          <span>From Template…</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -181,9 +220,15 @@ const credentialsPanelRef = useTemplateRef('credentialsPanel');
 
           <TooltipProvider :delay-duration="750">
             <SidebarContent data-tauri-drag-region class="**:data-[slot='sidebar-group']:pl-0!">
-              <CredentialsPanel
+              <AppSidebarCredentialsPanel
                 v-if="activeView === 'credentials'"
                 ref="credentialsPanel"
+                data-tauri-drag-region
+              />
+
+              <AppSidebarSnippetsPanel
+                v-else-if="activeView === 'snippets'"
+                ref="snippetsPanel"
                 data-tauri-drag-region
               />
 
@@ -207,6 +252,13 @@ const credentialsPanelRef = useTemplateRef('credentialsPanel');
                   </div>
                 </div>
                 <div v-else data-tauri-drag-region>
+                  <SidebarGroup class="py-0 sticky top-0 z-10 bg-sidebar" data-tauri-drag-region>
+                    <SidebarGroupLabel
+                      class="px-4.5 text-sm text-sidebar-foreground"
+                      data-tauri-drag-region
+                      >Hosts</SidebarGroupLabel
+                    >
+                  </SidebarGroup>
                   <SidebarGroup
                     v-for="[groupName, groupHosts] in groupedHosts"
                     :key="groupName"

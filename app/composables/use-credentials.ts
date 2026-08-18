@@ -1,3 +1,5 @@
+type Credential = Awaited<ReturnType<typeof commands.credential.list>>[number];
+
 /**
  * Shared composable providing reactive access to credentials (SSH keys and
  * passwords).
@@ -28,6 +30,34 @@ function _useCredentials() {
       return a.localeCompare(b);
     });
   });
+
+  // ── Filtering ────────────────────────────────────────────────────────────
+
+  /**
+   * Filter credentials by free-text query (name, command, description, tags)
+   * and optional group / scope constraints.
+   */
+  function filterCredentials(options: {
+    query?: string;
+    group?: string | null;
+    kind?: string | null;
+    keyType?: string | null;
+  }): Credential[] {
+    const query = options.query?.trim().toLowerCase() ?? '';
+    const group = options.group ?? null;
+    const kind = options.kind ?? null;
+    const keyType = options.keyType ?? null;
+
+    return (credentials.value ?? []).filter((credential) => {
+      if (group && credential.group !== group) return false;
+      if (kind && credential.kind !== kind) return false;
+      if (keyType && credential.keyType !== keyType) return false;
+      if (!query) return true;
+
+      const haystack = [credential.name, ...credential.tags].join(' ').toLowerCase();
+      return haystack.includes(query);
+    });
+  }
 
   const create: typeof commands.credential.create = async (input) => {
     const created = await commands.credential.create(input);
@@ -74,6 +104,7 @@ function _useCredentials() {
     groupedCredentials,
     credentialsState,
     refreshCredentials,
+    filterCredentials,
     create,
     update,
     remove,

@@ -359,6 +359,9 @@ async fn host_delete_inner(pool: &SqlitePool, id: &str) -> Result<(), HostError>
         .execute(pool)
         .await?;
 
+    // Snippets scoped to this host fall back to global.
+    super::snippets::clear_host_scope(pool, id).await?;
+
     log::info!("Host deleted (id: {id})");
     Ok(())
 }
@@ -582,6 +585,30 @@ mod tests {
 
         let result = host_resolve_inner(&pool, &host.id).await;
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn delete_clears_snippet_host_scope() {
+        let pool = db::test_pool().await;
+        let host = host_create_inner(&pool, sample_input()).await.unwrap();
+
+        sqlx::query(
+            r#"INSERT INTO snippet ("id", "name", "command", "host_id")
+               VALUES ('s1', 'disk usage', 'df -h', ?)"#,
+        )
+        .bind(&host.id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        host_delete_inner(&pool, &host.id).await.unwrap();
+
+        let host_id: Option<String> =
+            sqlx::query_scalar(r#"SELECT "host_id" FROM snippet WHERE "id" = 's1'"#)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(host_id, None);
     }
 
     #[tokio::test]

@@ -46,6 +46,7 @@ const activeSessionCount = computed(
 const sidebarOpen = ref<boolean>();
 const quickConnectOpen = ref(false);
 const aiCommandPaletteOpen = ref(false);
+const snippetRunnerOpen = ref(false);
 
 const disconnectConfirmOpen = ref(false);
 const pendingDisconnectTabId = ref<string | null>(null);
@@ -202,6 +203,13 @@ defineShortcuts({
       if (!aiEnabled.value || !aiPaletteEnabled.value) return;
       if (!activeSession.value?.sshSessionId) return;
       aiCommandPaletteOpen.value = true;
+    },
+    usingInput: true,
+  },
+  'meta_shift_p': {
+    handler: () => {
+      if (!activeSession.value?.sshSessionId) return;
+      snippetRunnerOpen.value = true;
     },
     usingInput: true,
   },
@@ -374,6 +382,7 @@ async function reconnect() {
 
   <QuickConnectDialog v-model:open="quickConnectOpen" />
   <AiCommandPalette v-model:open="aiCommandPaletteOpen" />
+  <SnippetRunnerDialog v-model:open="snippetRunnerOpen" />
 </template>
 
 <style>

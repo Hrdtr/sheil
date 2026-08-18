@@ -119,7 +119,7 @@ watch(open, (isOpen) => {
       </div>
 
       <DialogFooter>
-        <Button variant="ghost" @click="cancel">
+        <Button variant="outline" @click="cancel">
           {{ status === 'result' ? 'Back' : 'Cancel' }}
         </Button>
         <Button
