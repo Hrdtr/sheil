@@ -4,7 +4,7 @@ const {
   modelId,
   quant,
   inlineCompletionEnabled,
-  commandPaletteEnabled,
+  commandGeneratorEnabled,
   maxTokens,
   maxTokensMin,
   maxTokensMax,
@@ -196,8 +196,10 @@ watch(enabled, (value) => {
 
       <Field>
         <div class="flex items-center gap-2">
-          <Checkbox id="ai-inline" v-model="inlineCompletionEnabled" />
-          <Label for="ai-inline" class="text-sm cursor-pointer"> Inline ghost text </Label>
+          <Checkbox id="ai-inline-completion" v-model="inlineCompletionEnabled" />
+          <Label for="ai-inline-completion" class="text-sm cursor-pointer">
+            Inline ghost text
+          </Label>
         </div>
         <FieldDescription>
           Shows dimmed completion text after the cursor as you type commands.
@@ -206,8 +208,10 @@ watch(enabled, (value) => {
 
       <Field>
         <div class="flex items-center gap-2">
-          <Checkbox id="ai-palette" v-model="commandPaletteEnabled" />
-          <Label for="ai-palette" class="text-sm cursor-pointer"> Command palette (Cmd+I) </Label>
+          <Checkbox id="ai-command-generator" v-model="commandGeneratorEnabled" />
+          <Label for="ai-command-generator" class="text-sm cursor-pointer">
+            Command Generator (Cmd+I)
+          </Label>
         </div>
         <FieldDescription>
           Opens a dialog to generate shell commands from natural language.

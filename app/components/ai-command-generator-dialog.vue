@@ -77,17 +77,20 @@ watch(open, (isOpen) => {
 </script>
 
 <template>
-  <Dialog v-model:open="open">
-    <DialogContent class="max-w-lg">
-      <DialogHeader>
-        <DialogTitle>AI Command Generator</DialogTitle>
-        <DialogDescription>
+  <ResponsiveModal v-model:open="open" v-slot="{ kind }">
+    <ResponsiveModalContent :class="kind === 'dialog' ? 'max-w-md' : ''">
+      <ResponsiveModalHeader>
+        <ResponsiveModalTitle>AI Command Generator</ResponsiveModalTitle>
+        <ResponsiveModalDescription>
           Describe what you want to do and an AI-generated shell command will be inserted at the
           cursor.
-        </DialogDescription>
-      </DialogHeader>
+        </ResponsiveModalDescription>
+      </ResponsiveModalHeader>
 
-      <div class="space-y-4 py-1">
+      <div
+        class="space-y-4 overflow-y-auto py-1"
+        :class="kind === 'dialog' ? 'max-h-[60svh] -mx-6! px-6!' : '-mx-2! px-6!'"
+      >
         <Field v-if="status !== 'result'">
           <Input
             ref="promptInput"
@@ -118,7 +121,7 @@ watch(open, (isOpen) => {
         </div>
       </div>
 
-      <DialogFooter>
+      <ResponsiveModalFooter class="px-0" :class="kind === 'drawer' ? 'flex-col-reverse' : ''">
         <Button variant="outline" @click="cancel">
           {{ status === 'result' ? 'Back' : 'Cancel' }}
         </Button>
@@ -130,7 +133,7 @@ watch(open, (isOpen) => {
           Generate
         </Button>
         <Button v-if="status === 'result'" @click="insert">Insert</Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+      </ResponsiveModalFooter>
+    </ResponsiveModalContent>
+  </ResponsiveModal>
 </template>

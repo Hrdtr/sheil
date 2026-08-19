@@ -15,7 +15,6 @@ type Snippet = NonNullable<ReturnType<typeof useSnippets>['snippets']['value']>[
 const { hosts } = useHosts();
 const { activeSession } = useSessions();
 const { groupedSnippets, filterSnippets, remove } = useSnippets();
-const { settingsTabId } = useSettingsTab();
 
 const snippetFormDialogRef = useTemplateRef('snippetFormDialog');
 const snippetRunDialogRef = useTemplateRef('snippetRunDialog');
@@ -167,11 +166,7 @@ defineExpose({ openAdd, openTemplates });
                     class="hover:bg-accent dark:hover:bg-accent/50 transition-colors rounded-lg h-fit group/button px-2.5 py-[5.5px] items-start gap-1.5"
                     @click="
                       () => {
-                        if (
-                          activeSession &&
-                          activeSession.state === 'connected' &&
-                          activeSession.tabId !== settingsTabId
-                        ) {
+                        if (activeSession?.hostId && activeSession.state === 'connected') {
                           runSnippet(snippet);
                         } else {
                           copySnippet(snippet);
@@ -216,22 +211,14 @@ defineExpose({ openAdd, openTemplates });
                 <DropdownMenuContent class="w-fit">
                   <DropdownMenuGroup>
                     <DropdownMenuItem
-                      v-if="
-                        activeSession &&
-                        activeSession.state === 'connected' &&
-                        activeSession.tabId !== settingsTabId
-                      "
+                      v-if="activeSession?.hostId && activeSession.state === 'connected'"
                       @click="runSnippet(snippet)"
                     >
                       <PlayIcon class="size-3.5" />
                       <span>Run</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      v-if="
-                        activeSession &&
-                        activeSession.state === 'connected' &&
-                        activeSession.tabId !== settingsTabId
-                      "
+                      v-if="activeSession?.hostId && activeSession.state === 'connected'"
                       @click="runSnippet(snippet, false)"
                     >
                       <TerminalIcon class="size-3.5" />

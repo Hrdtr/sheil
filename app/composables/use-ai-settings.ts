@@ -18,7 +18,7 @@ interface AiSettings {
   modelId: string;
   quant: Quant;
   inlineCompletionEnabled: boolean;
-  commandPaletteEnabled: boolean;
+  commandGeneratorEnabled: boolean;
   maxTokens: number;
   temperature: number;
   topP: number;
@@ -78,10 +78,10 @@ function _useAiSettings() {
     },
   });
 
-  const commandPaletteEnabled = computed({
-    get: () => settings.value.commandPaletteEnabled,
+  const commandGeneratorEnabled = computed({
+    get: () => settings.value.commandGeneratorEnabled,
     set: (value) => {
-      settings.value = { ...settings.value, commandPaletteEnabled: value };
+      settings.value = { ...settings.value, commandGeneratorEnabled: value };
     },
   });
 
@@ -184,7 +184,7 @@ function _useAiSettings() {
     modelId,
     quant,
     inlineCompletionEnabled,
-    commandPaletteEnabled,
+    commandGeneratorEnabled,
     maxTokens,
     maxTokensMin,
     maxTokensMax,

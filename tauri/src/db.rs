@@ -182,4 +182,66 @@ mod tests {
         assert_eq!(pw_host_key_id, None);
         assert_eq!(pw_host_password_id.as_deref(), Some(password_id.as_str()));
     }
+
+    /// Seed a legacy `ai.command_palette_enabled` row, run only the rename
+    /// migration, and assert the user's value survives under the new key.
+    #[tokio::test]
+    async fn ai_command_generator_rename_migration_preserves_value() {
+        let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+        let migrator = sqlx::migrate!("./migrations");
+        let mut conn = pool.acquire().await.unwrap();
+
+        conn.ensure_migrations_table().await.unwrap();
+
+        // Apply every migration except the setting rename. Note: sqlx turns
+        // filename underscores into spaces in the description.
+        for migration in migrator.iter() {
+            if migration.description.contains("rename ai command palette") {
+                continue;
+            }
+            if !migration.migration_type.is_down_migration() {
+                conn.apply(migration).await.unwrap();
+            }
+        }
+
+        // Legacy row carrying a user-customized value.
+        sqlx::query(
+            r#"INSERT INTO setting ("key", "value", "default_value", "value_type")
+               VALUES ('ai.command_palette_enabled', 'false', 'true', 'boolean')"#,
+        )
+        .execute(&mut *conn)
+        .await
+        .unwrap();
+
+        // Apply the rename migration.
+        for migration in migrator.iter() {
+            if migration.description.contains("rename ai command palette") {
+                conn.apply(migration).await.unwrap();
+            }
+        }
+
+        let renamed: Option<(String, String, String)> = sqlx::query_as(
+            r#"SELECT "key", "value", "value_type" FROM setting
+               WHERE "key" = 'ai.command_generator_enabled'"#,
+        )
+        .fetch_optional(&mut *conn)
+        .await
+        .unwrap();
+        assert_eq!(
+            renamed,
+            Some((
+                "ai.command_generator_enabled".to_string(),
+                "false".to_string(),
+                "boolean".to_string()
+            ))
+        );
+
+        let legacy: Option<String> = sqlx::query_scalar(
+            r#"SELECT "key" FROM setting WHERE "key" = 'ai.command_palette_enabled'"#,
+        )
+        .fetch_optional(&mut *conn)
+        .await
+        .unwrap();
+        assert!(legacy.is_none());
+    }
 }

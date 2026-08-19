@@ -24,7 +24,7 @@ const {
 const { openSettings, settingsTabId } = useSettingsTab();
 const { togglePanel: togglePortForwardingPanel } = usePortForwarding();
 const { togglePanel: toggleSftpPanel } = useSftp();
-const { enabled: aiEnabled, commandPaletteEnabled: aiPaletteEnabled } = useAiSettings();
+const { enabled: aiEnabled, commandGeneratorEnabled: aiCommandGeneratorEnabled } = useAiSettings();
 const { checkForUpdates } = useUpdater();
 const { clear: clearTerminal, openSearch: openTerminalSearch } = useTerminalFocus();
 const { fontSize: terminalFontSize, defaultAppearance: terminalDefaultAppearance } =
@@ -39,13 +39,14 @@ onMounted(() => {
 const activeSessionCount = computed(
   () =>
     sessions.value.filter(
-      (s) => s.tabId !== settingsTabId && (s.state === 'connected' || s.state === 'connecting'),
+      (session) =>
+        session.hostId && (session.state === 'connected' || session.state === 'connecting'),
     ).length,
 );
 
 const sidebarOpen = ref<boolean>();
 const quickConnectOpen = ref(false);
-const aiCommandPaletteOpen = ref(false);
+const aiCommandGeneratorOpen = ref(false);
 const snippetRunnerOpen = ref(false);
 
 const disconnectConfirmOpen = ref(false);
@@ -53,16 +54,13 @@ const pendingDisconnectTabId = ref<string | null>(null);
 const pendingDisconnectHostName = computed(() => {
   const tabId = pendingDisconnectTabId.value;
   if (!tabId) return '';
-  return sessions.value.find((s) => s.tabId === tabId)?.hostName ?? '';
+  return sessions.value.find((session) => session.tabId === tabId)?.hostName ?? '';
 });
 
 function requestDisconnectTab(tabId: string) {
-  const session = sessions.value.find((s) => s.tabId === tabId);
+  const session = sessions.value.find((session) => session.tabId === tabId);
   if (!session) return;
-  if (
-    session.tabId === settingsTabId ||
-    (session.state !== 'connected' && session.state !== 'connecting')
-  ) {
+  if (!session.hostId || (session.state !== 'connected' && session.state !== 'connecting')) {
     disconnect(session.tabId);
     return;
   }
@@ -200,15 +198,15 @@ defineShortcuts({
   },
   'meta_i': {
     handler: () => {
-      if (!aiEnabled.value || !aiPaletteEnabled.value) return;
-      if (!activeSession.value?.sshSessionId) return;
-      aiCommandPaletteOpen.value = true;
+      if (!aiEnabled.value || !aiCommandGeneratorEnabled.value) return;
+      if (!activeSession.value?.hostId || activeSession.value?.state !== 'connected') return;
+      aiCommandGeneratorOpen.value = true;
     },
     usingInput: true,
   },
   'meta_shift_p': {
     handler: () => {
-      if (!activeSession.value?.sshSessionId) return;
+      if (!activeSession.value?.hostId || activeSession.value?.state !== 'connected') return;
       snippetRunnerOpen.value = true;
     },
     usingInput: true,
@@ -381,7 +379,7 @@ async function reconnect() {
   </AlertDialog>
 
   <QuickConnectDialog v-model:open="quickConnectOpen" />
-  <AiCommandPalette v-model:open="aiCommandPaletteOpen" />
+  <AiCommandGeneratorDialog v-model:open="aiCommandGeneratorOpen" />
   <SnippetRunnerDialog v-model:open="snippetRunnerOpen" />
 </template>
 

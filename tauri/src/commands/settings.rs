@@ -59,7 +59,7 @@ fn seeds() -> Vec<(&'static str, &'static str, &'static str)> {
         ("ai.model_id", "qwen2.5-coder-0.5b-instruct", "string"),
         ("ai.quant", "Q4_K_M", "string"),
         ("ai.inline_completion_enabled", "true", "boolean"),
-        ("ai.command_palette_enabled", "true", "boolean"),
+        ("ai.command_generator_enabled", "true", "boolean"),
         ("ai.max_tokens", "32", "number"),
         ("ai.temperature", "0.2", "number"),
         ("ai.top_p", "0.95", "number"),
