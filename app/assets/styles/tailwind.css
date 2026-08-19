@@ -142,8 +142,13 @@
     @apply shadow-none!;
   }
 
+  button[data-slot='select-trigger'],
+  [data-slot='select-item'] {
+    @apply text-base! md:text-sm!;
+  }
+
   [data-slot='tags-input-wrapper'] input {
-    @apply bg-transparent! shadow-none!;
+    @apply bg-transparent! shadow-none! text-base! md:text-sm!;
   }
 
   input[type='number']::-webkit-outer-spin-button,
