@@ -216,7 +216,7 @@ const snippetsPanelRef = useTemplateRef('snippetsPanel');
             </SidebarGroup>
           </SidebarHeader>
 
-          <TooltipProvider :delay-duration="750">
+          <TooltipProvider :delay-duration="1250">
             <SidebarContent data-tauri-drag-region class="**:data-[slot='sidebar-group']:pl-0!">
               <AppSidebarCredentialsPanel
                 v-if="activeView === 'credentials'"
@@ -233,7 +233,7 @@ const snippetsPanelRef = useTemplateRef('snippetsPanel');
               <template v-else>
                 <div
                   v-if="groupedHosts.length === 0"
-                  class="flex flex-col justify-center gap-2 px-6 py-8"
+                  class="flex flex-col justify-center gap-2 px-4 py-1.5"
                   data-tauri-drag-region
                 >
                   <div class="space-y-1" data-tauri-drag-region>

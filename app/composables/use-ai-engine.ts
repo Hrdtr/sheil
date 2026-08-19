@@ -7,7 +7,8 @@ interface EngineState {
 }
 
 function _useAiEngine() {
-  const { enabled, modelId, quant, maxTokens, temperature, topP, models } = useAiSettings();
+  const { enabled, modelId, maxTokens, temperature, topP, resolvedRepo, resolvedFilename } =
+    useAiSettings();
 
   const state = ref<EngineState>({
     status: 'idle',
@@ -22,15 +23,11 @@ function _useAiEngine() {
   let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
   function resolveFilename(): string | null {
-    const model = models.value.find((model) => model.id === modelId.value);
-    if (!model) return null;
-    const file = model.files.find((file) => file.quant === quant.value);
-    return file?.filename ?? model.files[0]?.filename ?? null;
+    return resolvedFilename.value;
   }
 
   function resolveRepo(): string | null {
-    const model = models.value.find((m) => m.id === modelId.value);
-    return model?.repo ?? null;
+    return resolvedRepo.value;
   }
 
   async function setupProgressListener() {
@@ -45,8 +42,9 @@ function _useAiEngine() {
   }
 
   async function loadModel() {
+    const repo = resolveRepo();
     const filename = resolveFilename();
-    if (!filename) {
+    if (!repo || !filename) {
       state.value = {
         status: 'error',
         modelDownloadProgress: 0,
@@ -55,7 +53,8 @@ function _useAiEngine() {
       return;
     }
 
-    if (loadedFilename === filename) {
+    const modelKey = `${repo}/${filename}`;
+    if (loadedFilename === modelKey) {
       const isLoaded = await commands.ai.isLoaded();
       if (isLoaded) return;
     }
@@ -66,8 +65,8 @@ function _useAiEngine() {
       error: null,
     };
     try {
-      await commands.ai.loadModel(filename);
-      loadedFilename = filename;
+      await commands.ai.loadModel(repo, filename);
+      loadedFilename = modelKey;
       state.value = {
         status: 'ready',
         modelDownloadProgress: 100,
@@ -175,12 +174,13 @@ function _useAiEngine() {
   function cancel() {}
 
   async function checkCacheStatus(): Promise<{ allCached: boolean; filename: string | null }> {
+    const repo = resolveRepo();
     const filename = resolveFilename();
-    if (!filename) return { allCached: false, filename: null };
+    if (!repo || !filename) return { allCached: false, filename: null };
 
     try {
       const downloaded = await commands.ai.listModels();
-      const exists = downloaded.some((model) => model.filename === filename);
+      const exists = downloaded.some((model) => model.filename === `${repo}/${filename}`);
       return { allCached: exists, filename };
     } catch {
       return { allCached: false, filename };
@@ -188,10 +188,11 @@ function _useAiEngine() {
   }
 
   async function clearModelCache(): Promise<void> {
+    const repo = resolveRepo();
     const filename = resolveFilename();
-    if (!filename) return;
-    await commands.ai.deleteModel(filename);
-    if (loadedFilename === filename) {
+    if (!repo || !filename) return;
+    await commands.ai.deleteModel(repo, filename);
+    if (loadedFilename === `${repo}/${filename}`) {
       loadedFilename = null;
       state.value = {
         status: 'idle',
@@ -217,8 +218,8 @@ function _useAiEngine() {
 
     try {
       await commands.ai.downloadModel(repo, filename);
-      await commands.ai.loadModel(filename);
-      loadedFilename = filename;
+      await commands.ai.loadModel(repo, filename);
+      loadedFilename = `${repo}/${filename}`;
       state.value = {
         status: 'ready',
         modelDownloadProgress: 100,
@@ -241,7 +242,7 @@ function _useAiEngine() {
     return loadModel();
   }
 
-  watch([modelId, quant], () => {
+  watch(modelId, () => {
     void reloadIfActive();
   });
 

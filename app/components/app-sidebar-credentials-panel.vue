@@ -140,7 +140,7 @@ defineExpose({ openImport, openAddPassword });
 
     <div
       v-if="(query.trim() ? visibleGroups.length : groupedCredentials.length) === 0"
-      class="flex flex-col justify-center gap-2 px-6 py-8"
+      class="flex flex-col justify-center gap-2 px-4 py-4"
       data-tauri-drag-region
     >
       <div class="space-y-1" data-tauri-drag-region>

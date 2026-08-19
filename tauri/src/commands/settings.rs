@@ -56,7 +56,11 @@ fn seeds() -> Vec<(&'static str, &'static str, &'static str)> {
         ("terminal.behavior.scroll_sensitivity", "1", "number"),
         // AI
         ("ai.enabled", "false", "boolean"),
-        ("ai.model_id", "qwen2.5-coder-0.5b-instruct", "string"),
+        (
+            "ai.model_id",
+            "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF/qwen2.5-coder-0.5b-instruct-q4_k_m.gguf",
+            "string",
+        ),
         ("ai.quant", "Q4_K_M", "string"),
         ("ai.inline_completion_enabled", "true", "boolean"),
         ("ai.command_generator_enabled", "true", "boolean"),
@@ -87,6 +91,19 @@ pub async fn seed_settings(pool: &SqlitePool) -> Result<(), String> {
         .map_err(|e| format!("database error: {e}"))?;
     }
     Ok(())
+}
+
+/// Read a single setting value directly from the pool.
+///
+/// Used during setup before the settings state/commands are available.
+pub async fn get_value(pool: &SqlitePool, key: &str) -> Result<Option<String>, String> {
+    let value: Option<String> =
+        sqlx::query_scalar(r#"SELECT "value" FROM setting WHERE "key" = ?"#)
+            .bind(key)
+            .fetch_optional(pool)
+            .await
+            .map_err(|e| format!("database error: {e}"))?;
+    Ok(value)
 }
 
 type SettingRow = (String, String, String, String, String, String);

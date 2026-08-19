@@ -1,22 +1,19 @@
-type Quant = 'Q4_K_M' | 'Q8_0' | 'F16';
+import { useDebounceFn } from '@vueuse/core';
 
-interface AiModelFile {
-  quant: string;
-  filename: string;
-  sizeMb: number;
+interface HfModel {
+  id: string;
+  downloads: number;
+  likes: number;
 }
 
-interface AiModel {
-  id: string;
-  name: string;
-  repo: string;
-  files: AiModelFile[];
+interface HfModelFile {
+  filename: string;
+  sizeBytes: number;
 }
 
 interface AiSettings {
   enabled: boolean;
   modelId: string;
-  quant: Quant;
   inlineCompletionEnabled: boolean;
   commandGeneratorEnabled: boolean;
   maxTokens: number;
@@ -25,26 +22,58 @@ interface AiSettings {
   contextLines: number;
 }
 
-const FALLBACK_MODELS: AiModel[] = [
+interface LegacyModel {
+  id: string;
+  repo: string;
+  filename: string;
+}
+
+const LEGACY_MODELS: LegacyModel[] = [
   {
     id: 'qwen2.5-coder-0.5b-instruct',
-    name: 'Qwen 2.5 Coder 0.5B',
     repo: 'Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF',
-    files: [
-      { quant: 'Q4_K_M', filename: 'qwen2.5-coder-0.5b-instruct-q4_k_m.gguf', sizeMb: 398 },
-      { quant: 'Q8_0', filename: 'qwen2.5-coder-0.5b-instruct-q8_0.gguf', sizeMb: 531 },
-    ],
+    filename: 'qwen2.5-coder-0.5b-instruct-q4_k_m.gguf',
+  },
+  {
+    id: 'qwen2.5-coder-1.5b-instruct',
+    repo: 'Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF',
+    filename: 'qwen2.5-coder-1.5b-instruct-q4_k_m.gguf',
   },
   {
     id: 'smollm2-135m-instruct',
-    name: 'SmolLM2 135M',
     repo: 'lmstudio-community/SmolLM2-135M-Instruct-GGUF',
-    files: [
-      { quant: 'Q4_K_M', filename: 'SmolLM2-135M-Instruct-Q4_K_M.gguf', sizeMb: 95 },
-      { quant: 'Q8_0', filename: 'SmolLM2-135M-Instruct-Q8_0.gguf', sizeMb: 145 },
-    ],
+    filename: 'SmolLM2-135M-Instruct-Q4_K_M.gguf',
   },
 ];
+
+function parseModelId(modelId: string): { repo: string; filename: string } | null {
+  const parts = modelId.split('/');
+  if (parts.length < 3) return null;
+  const repo = `${parts[0]}/${parts[1]}`;
+  const filename = parts.slice(2).join('/');
+  if (!repo || !filename) return null;
+  return { repo, filename };
+}
+
+function resolveModelId(modelId: string): { repo: string; filename: string } | null {
+  return parseModelId(modelId) ?? LEGACY_MODELS.find((model) => model.id === modelId) ?? null;
+}
+
+function smallestFile(files: HfModelFile[]): HfModelFile {
+  return files.reduce((min, file) => (file.sizeBytes < min.sizeBytes ? file : min));
+}
+
+function pickPreferredFile(files: HfModelFile[]): HfModelFile | null {
+  if (files.length === 0) return null;
+  const matching = (pattern: RegExp) => files.filter((file) => pattern.test(file.filename));
+  const q4KM = matching(/q4_k_m/i);
+  if (q4KM.length > 0) return smallestFile(q4KM);
+  const q4 = matching(/q4/i);
+  if (q4.length > 0) return smallestFile(q4);
+  const quantized = matching(/q\d/i);
+  if (quantized.length > 0) return smallestFile(quantized);
+  return smallestFile(files);
+}
 
 function _useAiSettings() {
   const defaults = settingsStore.namespaceDefaults<AiSettings>('ai');
@@ -64,12 +93,9 @@ function _useAiSettings() {
     },
   });
 
-  const quant = computed({
-    get: () => settings.value.quant,
-    set: (value) => {
-      settings.value = { ...settings.value, quant: value };
-    },
-  });
+  const resolved = computed(() => resolveModelId(modelId.value ?? ''));
+  const resolvedRepo = computed(() => resolved.value?.repo ?? null);
+  const resolvedFilename = computed(() => resolved.value?.filename ?? null);
 
   const inlineCompletionEnabled = computed({
     get: () => settings.value.inlineCompletionEnabled,
@@ -145,33 +171,101 @@ function _useAiSettings() {
     },
   });
 
-  const models = ref<AiModel[]>(FALLBACK_MODELS);
-  const modelsLoadError = ref(false);
+  const hfModels = ref<HfModel[]>([]);
+  const hfModelsLoading = ref(false);
+  const hfModelsError = ref(false);
+  let searchSeq = 0;
 
-  async function loadModels() {
+  async function searchHfModels(query = '') {
+    const seq = ++searchSeq;
+    hfModelsLoading.value = true;
+    hfModelsError.value = false;
     try {
-      const imported = await import('@/assets/ai-models.json').then((m) => m.default);
-      if (Array.isArray(imported) && imported.length > 0) {
-        models.value = imported as AiModel[];
-        modelsLoadError.value = false;
-      }
-    } catch {
-      modelsLoadError.value = true;
+      const results = await commands.ai.searchHfModels(query, 50);
+      if (seq !== searchSeq) return;
+      hfModels.value = results;
+    } catch (err) {
+      if (seq !== searchSeq) return;
+      hfModelsError.value = true;
+      console.error('failed to search Hugging Face models:', err);
+    } finally {
+      if (seq === searchSeq) hfModelsLoading.value = false;
     }
   }
 
-  loadModels();
+  const debouncedSearchHfModels = useDebounceFn(searchHfModels, 300);
 
-  function selectBestQuant(available: string[]): Quant {
-    if (available.includes('Q4_K_M')) return 'Q4_K_M';
-    if (available.includes('Q8_0')) return 'Q8_0';
-    return 'F16';
+  const selectedRepo = ref<string | null>(resolvedRepo.value);
+  const modelFiles = ref<HfModelFile[]>([]);
+  const modelFilesLoading = ref(false);
+  const modelFilesError = ref(false);
+  let filesSeq = 0;
+
+  async function loadModelFiles(repo: string) {
+    const seq = ++filesSeq;
+    modelFilesLoading.value = true;
+    modelFilesError.value = false;
+    try {
+      const files = await commands.ai.listHfModelFiles(repo);
+      if (seq !== filesSeq) return;
+      modelFiles.value = files;
+
+      if (files.length === 0) return;
+      const current = resolved.value;
+      if (current?.repo === repo && files.some((file) => file.filename === current.filename)) {
+        if (parseModelId(modelId.value) === null) {
+          modelId.value = `${repo}/${current.filename}`;
+        }
+        return;
+      }
+      const preferred = pickPreferredFile(files);
+      if (preferred) modelId.value = `${repo}/${preferred.filename}`;
+    } catch (err) {
+      if (seq !== filesSeq) return;
+      modelFilesError.value = true;
+      console.error('failed to list Hugging Face model files:', err);
+    } finally {
+      if (seq === filesSeq) modelFilesLoading.value = false;
+    }
   }
 
+  function selectRepo(repo: string) {
+    selectedRepo.value = repo;
+    modelFiles.value = [];
+    void loadModelFiles(repo);
+  }
+
+  function selectFile(filename: string) {
+    const repo = selectedRepo.value ?? resolvedRepo.value;
+    if (!repo) return;
+    modelId.value = `${repo}/${filename}`;
+  }
+
+  watch(resolvedRepo, (repo) => {
+    if (repo && repo !== selectedRepo.value) {
+      selectedRepo.value = repo;
+      void loadModelFiles(repo);
+    }
+  });
+
+  if (selectedRepo.value) {
+    void loadModelFiles(selectedRepo.value);
+  }
+  void searchHfModels();
+
+  const modelOptions = computed(() => {
+    const options = [...hfModels.value];
+    const repo = selectedRepo.value;
+    if (repo && !options.some((model) => model.id === repo)) {
+      options.unshift({ id: repo, downloads: 0, likes: 0 });
+    }
+    return options;
+  });
+
   const selectedFile = computed(() => {
-    const model = models.value.find((model) => model.id === modelId.value);
-    if (!model) return null;
-    return model.files.find((f) => f.quant === quant.value) ?? model.files[0] ?? null;
+    const filename = resolvedFilename.value;
+    if (!filename) return null;
+    return modelFiles.value.find((file) => file.filename === filename) ?? null;
   });
 
   async function reset(): Promise<void> {
@@ -182,7 +276,8 @@ function _useAiSettings() {
     settings,
     enabled,
     modelId,
-    quant,
+    resolvedRepo,
+    resolvedFilename,
     inlineCompletionEnabled,
     commandGeneratorEnabled,
     maxTokens,
@@ -197,9 +292,18 @@ function _useAiSettings() {
     contextLines,
     contextLinesMin,
     contextLinesMax,
-    models,
-    modelsLoadError,
-    selectBestQuant,
+    hfModels: modelOptions,
+    hfModelsLoading,
+    hfModelsError,
+    searchHfModels,
+    debouncedSearchHfModels,
+    selectedRepo,
+    selectRepo,
+    modelFiles,
+    modelFilesLoading,
+    modelFilesError,
+    loadModelFiles,
+    selectFile,
     selectedFile,
     reset,
   };

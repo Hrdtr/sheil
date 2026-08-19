@@ -113,6 +113,7 @@ version = "0.1.8"
 dependencies = [
  "aes-gcm",
  "encoding_rs",
+ "futures",
  "hf-hub",
  "llama-cpp-2",
  "log",

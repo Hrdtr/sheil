@@ -410,21 +410,43 @@ interface AiModelFile {
   sizeBytes: number;
 }
 
+interface HfModelSummary {
+  id: string;
+  downloads: number;
+  likes: number;
+}
+
+interface HfModelRepoFile {
+  filename: string;
+  sizeBytes: number;
+}
+
 const ai = {
   downloadModel: async (repo: string, filename: string): Promise<void> => {
     return invoke('ai_download_model', { repo, filename });
   },
 
-  deleteModel: async (filename: string): Promise<void> => {
-    return invoke('ai_delete_model', { filename });
+  searchHfModels: async (query?: string, limit?: number): Promise<HfModelSummary[]> => {
+    return invoke<HfModelSummary[]>('ai_search_hf_models', {
+      query: query ?? null,
+      limit: limit ?? null,
+    });
+  },
+
+  listHfModelFiles: async (repo: string): Promise<HfModelRepoFile[]> => {
+    return invoke<HfModelRepoFile[]>('ai_list_hf_model_files', { repo });
+  },
+
+  deleteModel: async (repo: string, filename: string): Promise<void> => {
+    return invoke('ai_delete_model', { repo, filename });
   },
 
   listModels: async (): Promise<AiModelFile[]> => {
     return invoke<AiModelFile[]>('ai_list_models');
   },
 
-  loadModel: async (filename: string, nCtx?: number): Promise<void> => {
-    return invoke('ai_load_model', { filename, nCtx: nCtx ?? 2048 });
+  loadModel: async (repo: string, filename: string, nCtx?: number): Promise<void> => {
+    return invoke('ai_load_model', { repo, filename, nCtx: nCtx ?? 2048 });
   },
 
   unloadModel: async (): Promise<void> => {

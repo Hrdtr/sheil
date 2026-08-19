@@ -4,8 +4,8 @@ mod crypto;
 mod db;
 
 use commands::ai::{
-    ai_delete_model, ai_download_model, ai_generate, ai_is_loaded, ai_list_models, ai_load_model,
-    ai_unload_model, AiState,
+    ai_delete_model, ai_download_model, ai_generate, ai_is_loaded, ai_list_hf_model_files,
+    ai_list_models, ai_load_model, ai_search_hf_models, ai_unload_model, AiState,
 };
 use commands::credentials::{
     credential_create, credential_delete, credential_list, credential_resolve, credential_update,
@@ -19,7 +19,7 @@ use commands::port_forward::{
     port_forward_start_remote, port_forward_stop,
 };
 use commands::settings::{
-    seed_settings, settings_get, settings_get_all, settings_reset, settings_reset_all,
+    get_value, seed_settings, settings_get, settings_get_all, settings_reset, settings_reset_all,
     settings_reset_many, settings_set, settings_set_many,
 };
 use commands::sftp::{
@@ -68,6 +68,9 @@ pub fn run() {
 
             let pool = tauri::async_runtime::block_on(db::init(&app_data_dir))?;
             tauri::async_runtime::block_on(seed_settings(&pool)).expect("failed to seed settings");
+            let ai_model_id = tauri::async_runtime::block_on(get_value(&pool, "ai.model_id"))
+                .ok()
+                .flatten();
             let master_key = load_or_create_master_key(&app_data_dir)
                 .expect("failed to load or create master encryption key");
 
@@ -82,6 +85,13 @@ pub fn run() {
 
             let models_dir = app_data_dir.join("hf-models");
             let ai_state = AiState::new(models_dir).expect("failed to initialize AI state");
+
+            if let Some(model_id) = &ai_model_id {
+                if let Err(e) = ai_state.relocate_flat_models(model_id) {
+                    log::warn!("failed to relocate legacy AI model files: {e}");
+                }
+            }
+
             app.manage(ai_state);
 
             Ok(())
@@ -141,6 +151,8 @@ pub fn run() {
             ai_download_model,
             ai_delete_model,
             ai_list_models,
+            ai_search_hf_models,
+            ai_list_hf_model_files,
             ai_load_model,
             ai_unload_model,
             ai_is_loaded,

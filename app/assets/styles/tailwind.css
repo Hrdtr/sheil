@@ -129,6 +129,7 @@
   select,
   textarea,
   button[data-slot='select-trigger'],
+  button[data-slot='combobox-anchor'],
   [data-slot='tags-input-wrapper'],
   [data-slot='command-input-wrapper'] > [data-slot='input-group'] {
     @apply bg-input/30! shadow-none!;
@@ -143,7 +144,8 @@
   }
 
   button[data-slot='select-trigger'],
-  [data-slot='select-item'] {
+  [data-slot='select-item'],
+  button[data-slot='combobox-anchor'] {
     @apply text-base! md:text-sm!;
   }
 

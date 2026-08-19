@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { CheckIcon, ChevronsUpDownIcon } from '@lucide/vue';
+
 const {
   enabled,
   modelId,
-  quant,
+  resolvedFilename,
   inlineCompletionEnabled,
   commandGeneratorEnabled,
   maxTokens,
@@ -17,8 +19,17 @@ const {
   contextLines,
   contextLinesMin,
   contextLinesMax,
-  models,
-  modelsLoadError,
+  hfModels,
+  hfModelsLoading,
+  hfModelsError,
+  debouncedSearchHfModels,
+  selectedRepo,
+  selectRepo,
+  modelFiles,
+  modelFilesLoading,
+  modelFilesError,
+  loadModelFiles,
+  selectFile,
   selectedFile,
   reset,
 } = useAiSettings();
@@ -34,18 +45,43 @@ const isDownloaded = ref(false);
 const metadataLoading = ref(false);
 const isDownloading = ref(false);
 const downloadError = ref<string | null>(null);
+const searchTerm = ref('');
 
-const quantLabels: Record<string, string> = {
-  Q4_K_M: '4-bit (Q4_K_M)',
-  Q8_0: '8-bit (Q8_0)',
-  F16: 'Half precision (F16)',
-};
-
-function quantLabel(quant: string) {
-  return quantLabels[quant] ?? quant;
+function quantLabel(filename: string): string {
+  const base = filename.replace(/\.gguf$/i, '').replace(/^.*\//, '');
+  const matches = [...base.matchAll(/iq\d+[a-z0-9_]*|q\d+(?:_[a-z0-9]+)*|fp16|bf16|f16|f32/gi)];
+  const last = matches[matches.length - 1];
+  return last ? last[0].toUpperCase() : base;
 }
 
-const currentModel = computed(() => models.value.find((model) => model.id === modelId.value));
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
+  return `${Math.max(1, Math.round(bytes / 1024 ** 2))} MB`;
+}
+
+function formatCount(count: number): string {
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
+  if (count >= 1_000) return `${Math.round(count / 1_000)}k`;
+  return String(count);
+}
+
+function handleSearchTerm(value: string) {
+  if (!value) return;
+  searchTerm.value = value;
+  void debouncedSearchHfModels(value);
+}
+
+function handleRepoSelect(value: unknown) {
+  if (typeof value !== 'string' || !value) return;
+  searchTerm.value = '';
+  selectRepo(value);
+  if (enabled.value) fetchCacheStatus();
+}
+
+function handleFileSelect(value: unknown) {
+  if (typeof value !== 'string' || !value) return;
+  selectFile(value);
+}
 
 async function fetchCacheStatus() {
   metadataLoading.value = true;
@@ -88,7 +124,7 @@ async function handleDelete() {
 }
 
 watch(
-  [modelId, quant],
+  modelId,
   () => {
     if (enabled.value) fetchCacheStatus();
   },
@@ -114,32 +150,100 @@ watch(enabled, (value) => {
 
     <template v-if="enabled">
       <Field>
-        <FieldLabel>Model</FieldLabel>
-        <Select v-model="modelId">
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem v-for="model in models" :key="model.id" :value="model.id">
-                {{ model.name }}
-              </SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        <FieldDescription v-if="modelsLoadError"> Using default model list. </FieldDescription>
+        <FieldLabel>Model Repository</FieldLabel>
+        <Combobox :model-value="selectedRepo" ignore-filter @update:model-value="handleRepoSelect">
+          <ComboboxAnchor as-child>
+            <ComboboxTrigger as-child>
+              <Button variant="outline" class="w-full justify-between font-normal">
+                <span class="truncate" :class="!selectedRepo ? 'text-muted-foreground' : ''">
+                  {{ selectedRepo ?? 'Search Hugging Face models…' }}
+                </span>
+                <ChevronsUpDownIcon class="size-4 shrink-0 opacity-50" />
+              </Button>
+            </ComboboxTrigger>
+          </ComboboxAnchor>
+          <ComboboxList>
+            <ComboboxInput
+              :model-value="searchTerm"
+              :display-value="() => ''"
+              placeholder="Search GGUF model repositories…"
+              class="text-sm"
+              @update:model-value="handleSearchTerm"
+            />
+            <ComboboxViewport class="max-h-64">
+              <div
+                v-if="hfModelsLoading"
+                class="flex items-center gap-2 px-2 py-4 text-sm text-muted-foreground"
+              >
+                <Skeleton class="h-3 w-3 rounded-full" />
+                <span>Searching Hugging Face…</span>
+              </div>
+              <template v-else>
+                <ComboboxEmpty>
+                  {{
+                    hfModelsError ? 'Failed to load models from Hugging Face.' : 'No models found.'
+                  }}
+                </ComboboxEmpty>
+                <ComboboxGroup>
+                  <ComboboxItem v-for="model in hfModels" :key="model.id" :value="model.id">
+                    <div class="flex flex-col items-start">
+                      <span class="truncate">{{ model.id }}</span>
+                      <span class="shrink-0 text-xs text-muted-foreground">
+                        {{ model.id === selectedRepo ? 'Selected' : '' }}
+                        <span v-if="model.downloads > 0">
+                          {{ model.id === selectedRepo ? '· ' : ''
+                          }}{{ formatCount(model.downloads) }} downloads
+                        </span>
+                      </span>
+                    </div>
+                    <ComboboxItemIndicator>
+                      <CheckIcon class="size-4" />
+                    </ComboboxItemIndicator>
+                  </ComboboxItem>
+                </ComboboxGroup>
+              </template>
+            </ComboboxViewport>
+          </ComboboxList>
+        </Combobox>
+        <FieldDescription>GGUF model repositories from huggingface.co.</FieldDescription>
       </Field>
 
       <Field>
-        <FieldLabel>Quantization</FieldLabel>
-        <Select v-model="quant">
-          <SelectTrigger><SelectValue /></SelectTrigger>
+        <FieldLabel>Model File</FieldLabel>
+        <div v-if="modelFilesLoading" class="flex items-center gap-2 py-1.5">
+          <Skeleton class="h-3 w-3 rounded-full" />
+          <span class="text-sm text-muted-foreground">Loading model files…</span>
+        </div>
+        <div v-else-if="modelFilesError" class="text-sm">
+          <span class="text-destructive">Failed to load model files.</span>
+          <Button
+            v-if="selectedRepo"
+            variant="link"
+            size="sm"
+            class="px-1"
+            @click="loadModelFiles(selectedRepo)"
+          >
+            Retry
+          </Button>
+        </div>
+        <Select v-else :model-value="resolvedFilename" @update:model-value="handleFileSelect">
+          <SelectTrigger>
+            <SelectValue
+              :aria-label="resolvedFilename || 'Select a model file…'"
+              :class="!resolvedFilename ? 'text-muted-foreground' : ''"
+            >
+              {{ resolvedFilename || 'Select a model file…' }}
+            </SelectValue>
+          </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem
-                v-for="file in currentModel?.files ?? []"
-                :key="file.quant"
-                :value="file.quant"
-              >
-                {{ quantLabel(file.quant) }}
+              <SelectItem v-for="file in modelFiles" :key="file.filename" :value="file.filename">
+                <div class="flex flex-col items-start">
+                  <span class="truncate">{{ file.filename }}</span>
+                  <span class="shrink-0 text-xs text-muted-foreground">
+                    {{ quantLabel(file.filename) }} · {{ formatBytes(file.sizeBytes) }}
+                  </span>
+                </div>
               </SelectItem>
             </SelectGroup>
           </SelectContent>
@@ -162,7 +266,7 @@ watch(enabled, (value) => {
               :class="isDownloaded ? 'bg-green-500' : 'bg-muted-foreground'"
             />
             <span>{{ isDownloaded ? 'Downloaded' : 'Not downloaded' }}</span>
-            <span class="text-muted-foreground">({{ selectedFile.sizeMb }} MB)</span>
+            <span class="text-muted-foreground">({{ formatBytes(selectedFile.sizeBytes) }})</span>
           </div>
 
           <div class="text-xs text-muted-foreground font-mono">
@@ -222,11 +326,11 @@ watch(enabled, (value) => {
         </FieldDescription>
       </Field>
 
-      <Collapsible>
+      <Collapsible v-slot="{ open }">
         <CollapsibleTrigger class="flex items-center gap-1 text-sm font-medium hover:underline">
-          Advanced
+          {{ open ? 'Hide' : 'Show' }} advanced settings
         </CollapsibleTrigger>
-        <CollapsibleContent class="mt-3 space-y-4">
+        <CollapsibleContent class="mt-4 space-y-4">
           <div class="grid grid-cols-2 gap-3">
             <Field>
               <FieldLabel>Max Tokens</FieldLabel>
