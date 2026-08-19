@@ -38,7 +38,9 @@ async function handleReset() {
 
 /** Label of the currently selected font family. */
 const selectedFontLabel = computed(
-  () => fontFamilyOptions.find((f) => f.value === fontFamily.value)?.label ?? fontFamily.value,
+  () =>
+    fontFamilyOptions.find((family) => family.value === fontFamily.value)?.label ??
+    fontFamily.value,
 );
 /** The 8 base ANSI swatch colors drawn from a scheme's theme. */
 function ansiSwatches(theme: ITheme): string[] {
@@ -51,7 +53,7 @@ function ansiSwatches(theme: ITheme): string[] {
     theme.magenta,
     theme.cyan,
     theme.white,
-  ].map((c) => c ?? 'transparent');
+  ].map((color) => color ?? 'transparent');
 }
 
 /** Stable key-sorted serialization so theme equality is order-independent. */
@@ -100,10 +102,10 @@ function isActiveTheme(theme: ITheme): boolean {
             <span class="truncate text-start leading-none opacity-80 -mt-1">➜ ~ git:(main)</span>
             <div class="flex gap-1">
               <span
-                v-for="c in ansiSwatches(scheme.theme)"
-                :key="c"
+                v-for="color in ansiSwatches(scheme.theme)"
+                :key="color"
                 class="size-2 rounded-[2px] ring-1 ring-black/10"
-                :style="{ backgroundColor: c }"
+                :style="{ backgroundColor: color }"
               />
             </div>
           </div>
@@ -122,8 +124,12 @@ function isActiveTheme(theme: ITheme): boolean {
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
-            <SelectItem v-for="f in fontFamilyOptions" :key="f.value" :value="f.value">
-              <span :style="{ fontFamily: f.value }">{{ f.label }}</span>
+            <SelectItem
+              v-for="family in fontFamilyOptions"
+              :key="family.value"
+              :value="family.value"
+            >
+              <span :style="{ fontFamily: family.value }">{{ family.label }}</span>
             </SelectItem>
           </SelectGroup>
         </SelectContent>
@@ -165,9 +171,12 @@ function isActiveTheme(theme: ITheme): boolean {
         <SelectTrigger><SelectValue /></SelectTrigger>
         <SelectContent>
           <SelectGroup>
-            <SelectItem v-for="c in cursorStyleOptions" :key="c.value" :value="c.value">{{
-              c.label
-            }}</SelectItem>
+            <SelectItem
+              v-for="color in cursorStyleOptions"
+              :key="color.value"
+              :value="color.value"
+              >{{ color.label }}</SelectItem
+            >
           </SelectGroup>
         </SelectContent>
       </Select>

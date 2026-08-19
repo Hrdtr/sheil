@@ -3,14 +3,14 @@ import { ArrowLeftRightIcon, ArrowRightLeftIcon, GlobeIcon, PlusIcon, XIcon } fr
 import { platform } from '@tauri-apps/plugin-os';
 
 const isDesktop = computed(() => {
-  const p = platform();
-  return p !== 'android' && p !== 'ios';
+  const currentPlatform = platform();
+  return currentPlatform !== 'android' && currentPlatform !== 'ios';
 });
+
+const createDialogOpen = ref(false);
 
 const { activeSession } = useSessions();
 const { forwards, stop, refresh, panelOpen } = usePortForwarding();
-
-const createDialogOpen = ref(false);
 
 // Refresh when active session changes
 watch(

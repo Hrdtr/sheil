@@ -8,10 +8,10 @@ import {
   TrashIcon,
 } from '@lucide/vue';
 
+type Credential = (typeof groupedCredentials.value)[number][1][number];
+
 const { hosts } = useHosts();
 const { groupedCredentials, filterCredentials, assignToHost, remove } = useCredentials();
-
-const credentialFormDialogRef = useTemplateRef('credentialFormDialog');
 
 // ── Usage counts ────────────────────────────────────────────────────────────
 
@@ -24,8 +24,9 @@ const usageCount = computed(() => {
   return counts;
 });
 
-const query = ref('');
+const credentialFormDialogRef = useTemplateRef('credentialFormDialog');
 
+const query = ref('');
 const visibleGroups = computed(() => {
   if (!query.value.trim()) return groupedCredentials.value;
   const filtered = filterCredentials({ query: query.value });
@@ -41,8 +42,6 @@ const visibleGroups = computed(() => {
     return a.localeCompare(b);
   });
 });
-
-type Credential = (typeof groupedCredentials.value)[number][1][number];
 
 function credentialSubtitle(credential: Credential): string {
   const count = usageCount.value.get(credential.id) ?? 0;

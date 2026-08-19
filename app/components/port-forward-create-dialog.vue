@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import { platform } from '@tauri-apps/plugin-os';
-
 const open = defineModel<boolean>('open');
-
-const isDesktop = computed(() => {
-  const p = platform();
-  return p !== 'android' && p !== 'ios';
-});
 
 const { activeSession } = useSessions();
 const { startLocal, startRemote, startDynamic, refresh } = usePortForwarding();
@@ -123,13 +116,7 @@ const isValid = computed(() => {
               class="flex-1 text-xs"
               @click="forwardType = opt"
             >
-              {{
-                {
-                  local: 'Local',
-                  remote: 'Remote',
-                  dynamic: 'SOCKS5',
-                }[opt]
-              }}
+              {{ { local: 'Local', remote: 'Remote', dynamic: 'SOCKS5' }[opt] }}
             </Button>
           </div>
         </Field>

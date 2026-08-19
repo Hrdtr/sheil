@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import { FolderIcon, GlobeIcon, MonitorIcon } from '@lucide/vue';
 
+type Snippet = (typeof runnableSnippets.value)[number];
+
 const open = defineModel<boolean>('open');
 
 const { hosts } = useHosts();
 const { runnableSnippets } = useSnippets();
 
-type Snippet = (typeof runnableSnippets.value)[number];
-
 const snippetRunDialogRef = useTemplateRef('snippetRunDialog');
-
 const commandInputRef = useTemplateRef('commandInput');
 
 const commandInputSearch = ref('');
-
 const commandInputSearchInputEventListenerHandler = (event: InputEvent) => {
   commandInputSearch.value = (event.target as HTMLInputElement).value;
 };
@@ -56,7 +54,7 @@ const showEmptyStateHelp = computed(() => {
 
 function scopeInfo(snippet: Snippet): { icon: typeof MonitorIcon; label: string } | null {
   if (snippet.hostId) {
-    const host = (hosts.value ?? []).find((h) => h.id === snippet.hostId);
+    const host = (hosts.value ?? []).find((host) => host.id === snippet.hostId);
     return { icon: MonitorIcon, label: host?.name ?? 'Unknown host' };
   }
   if (snippet.hostGroup) {

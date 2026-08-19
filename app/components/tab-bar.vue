@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { XIcon } from '@lucide/vue';
 
-type Session = ReturnType<typeof useSessions>['sessions']['value'][number];
+type Tab = ReturnType<typeof useTabs>['tabs']['value'][number];
+type Session = NonNullable<ReturnType<typeof useSessions>['sessions']['value'][number]>;
 
 const props = defineProps<{
-  sessions: Session[];
+  tabs: Tab[];
   activeTabId: string | null;
 }>();
 
@@ -15,10 +16,22 @@ const emit = defineEmits<{
 }>();
 
 const { hosts } = useHosts();
+const { sessions } = useSessions();
 
-function hostName(session: Session): string {
+/** Live session attached to a tab (`undefined` for non-session tabs like Settings). */
+function sessionFor(tabId: string): Session | undefined {
+  return sessions.value.find((session) => session.tabId === tabId);
+}
+
+function tabLabel(tab: Tab): string {
+  if (tab.kind === 'settings') return 'Settings';
+  const session = sessionFor(tab.id);
   return (
-    session.hostName || hosts.value?.find((h) => h.id === session.hostId)?.name || session.hostId
+    session?.title ||
+    session?.hostName ||
+    hosts.value?.find((h) => h.id === session?.hostId)?.name ||
+    session?.hostId ||
+    tab.id
   );
 }
 
@@ -104,28 +117,28 @@ if (import.meta.client) {
 
 <template>
   <div
-    v-if="sessions.length > 0"
+    v-if="tabs.length > 0"
     ref="tabContainer"
     class="flex-1 flex items-end gap-1 overflow-x-auto shrink-0 scrollbar-none [&::-webkit-scrollbar]:hidden"
     data-tauri-drag-region
   >
     <Button
-      v-for="(session, index) in sessions"
-      :key="session.tabId"
-      :data-tab-id="session.tabId"
+      v-for="(tab, index) in tabs"
+      :key="tab.id"
+      :data-tab-id="tab.id"
       size="sm"
       variant="secondary"
       class="group relative min-w-0 max-w-48 font-normal rounded-lg cursor-default touch-none"
       :class="[
-        session.tabId === activeTabId
+        tab.id === activeTabId
           ? 'bg-primary hover:bg-primary! text-primary-foreground hover:text-primary-foreground!'
           : 'bg-accent/50 text-foreground/65 hover:text-foreground',
-        session.state === 'connecting' && 'animate-pulse',
-        session.state === 'error' && 'text-destructive! hover:text-destructive!',
-        session.state === 'disconnected' && 'opacity-50!',
+        sessionFor(tab.id)?.state === 'connecting' && 'animate-pulse',
+        sessionFor(tab.id)?.state === 'error' && 'text-destructive! hover:text-destructive!',
+        sessionFor(tab.id)?.state === 'disconnected' && 'opacity-50!',
         dragIndex === index && 'opacity-40',
       ]"
-      @click="emit('selectTab', session.tabId)"
+      @click="emit('selectTab', tab.id)"
       @pointerdown="(e: PointerEvent) => onTabPointerDown(e, index)"
     >
       <span
@@ -136,20 +149,18 @@ if (import.meta.client) {
         v-if="dropTargetIndex === index && dragIndex! < index"
         class="absolute -right-1 top-0 bottom-0 w-0.5 bg-primary my-1.5 rounded-full z-10"
       />
-      <span class="truncate text-sm pointer-events-none">{{
-        session.title || hostName(session)
-      }}</span>
+      <span class="truncate text-sm pointer-events-none">{{ tabLabel(tab) }}</span>
       <Button
         variant="ghost"
         size="icon-sm"
         class="-mr-1.5 size-6 shrink-0 rounded-md opacity-65 group-hover:opacity-100 transition-opacity"
         :class="
-          session.tabId === activeTabId
+          tab.id === activeTabId
             ? 'text-primary-foreground group-hover:text-primary-foreground hover:text-primary-foreground hover:bg-accent/10!'
             : 'text-muted-foreground hover:text-muted-foreground hover:bg-accent/50!'
         "
         tabindex="-1"
-        @click.stop="emit('closeTab', session.tabId)"
+        @click.stop="emit('closeTab', tab.id)"
       >
         <XIcon />
       </Button>

@@ -44,7 +44,7 @@ function openAdd(kind?: 'key' | 'password') {
 }
 
 function openEdit(id: string) {
-  const credential = (credentials.value ?? []).find((c) => c.id === id);
+  const credential = (credentials.value ?? []).find((credential) => credential.id === id);
   if (!credential) return;
   editingId.value = credential.id;
   formKind.value = credential.kind;

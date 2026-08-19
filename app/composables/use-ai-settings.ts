@@ -169,7 +169,7 @@ function _useAiSettings() {
   }
 
   const selectedFile = computed(() => {
-    const model = models.value.find((m) => m.id === modelId.value);
+    const model = models.value.find((model) => model.id === modelId.value);
     if (!model) return null;
     return model.files.find((f) => f.quant === quant.value) ?? model.files[0] ?? null;
   });

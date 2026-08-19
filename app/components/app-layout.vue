@@ -12,17 +12,20 @@ const emit = defineEmits<{
   'update:sidebar-open': [value: boolean];
 }>();
 
-const { sessions, activeTabId, switchTab, reorder } = useSessions();
-const { settingsTabId } = useSettingsTab();
+const { tabs, activeTabId, switchTab, reorderTabs } = useTabs();
+const { settingsActive } = useSettingsTab();
 const { panelOpen: pfOpen, forwards } = usePortForwarding();
 const { panelOpen: sftpOpen } = useSftp();
 const { md } = useBreakpoints(breakpointsTailwind);
 
 const panelsOpen = computed(() => pfOpen.value || sftpOpen.value);
+
 const isDesktop = computed(() => {
-  const p = platform();
-  return p !== 'android' && p !== 'ios';
+  const currentPlatform = platform();
+  return currentPlatform !== 'android' && currentPlatform !== 'ios';
 });
+const isMacos = platform() === 'macos';
+const isFullscreen = ref(false);
 
 watch(md, (value, oldValue) => {
   if (!value && oldValue) {
@@ -33,9 +36,6 @@ watch(md, (value, oldValue) => {
 });
 
 const requestDisconnectTab = inject<(tabId: string) => void>('requestDisconnectTab');
-
-const isMacos = platform() === 'macos';
-const isFullscreen = ref(false);
 
 const unlistedWindowResizedEvent = ref<UnlistenFn>();
 onMounted(async () => {
@@ -75,13 +75,13 @@ onBeforeUnmount(() => {
         />
         <!-- Tab bar -->
         <TabBar
-          :sessions="sessions"
+          :tabs="tabs"
           :active-tab-id="activeTabId"
           @select-tab="switchTab"
           @close-tab="(tabId) => requestDisconnectTab?.(tabId)"
-          @reorder-tab="(fromIndex, toIndex) => reorder(fromIndex, toIndex)"
+          @reorder-tab="(fromIndex, toIndex) => reorderTabs(fromIndex, toIndex)"
         />
-        <DropdownMenu v-if="sessions.length > 0 && activeTabId !== settingsTabId">
+        <DropdownMenu v-if="tabs.length > 0 && !settingsActive">
           <DropdownMenuTrigger as-child>
             <Button
               variant="secondary"

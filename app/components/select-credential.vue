@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { CheckIcon, ChevronsUpDownIcon, KeyIcon, LockIcon, PlusIcon } from '@lucide/vue';
 
+type Credential = NonNullable<typeof credentials.value>[number];
+
 const props = withDefaults(
   defineProps<{
     /** Filter the list to a single credential kind. */
@@ -14,16 +16,14 @@ const model = defineModel<string | null>({ default: null });
 
 const { credentials, groupedCredentials } = useCredentials();
 
-type Credential = NonNullable<typeof credentials.value>[number];
-
 const filteredCredentials = computed(() => {
   if (!props.kind) return credentials.value ?? [];
   return (credentials.value ?? []).filter((credential) => credential.kind === props.kind);
 });
 
-const selected = computed(
-  () => filteredCredentials.value.find((credential) => credential.id === model.value) ?? null,
-);
+const selected = computed(() => {
+  return filteredCredentials.value.find((credential) => credential.id === model.value) ?? null;
+});
 
 function getDisplayValue(id: string | null): string {
   if (!id) return '';
@@ -31,7 +31,6 @@ function getDisplayValue(id: string | null): string {
 }
 
 const formDialogRef = useTemplateRef('formDialog');
-
 function openCreate(kind: 'key' | 'password') {
   formDialogRef.value?.openAdd(kind);
 }

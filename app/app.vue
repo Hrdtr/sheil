@@ -3,16 +3,8 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Toaster } from '@/components/ui/sonner';
 import 'vue-sonner/style.css';
 
-const {
-  sessions,
-  activeSession,
-  activeTabId,
-  connect,
-  focusOrConnect,
-  disconnect,
-  switchTab,
-  setTitle,
-} = useSessions();
+const { tabs, activeTabId, switchTab, closeTab } = useTabs();
+const { sessions, activeSession, connect, focusOrConnect, disconnect, setTitle } = useSessions();
 const { recentHosts, clear: clearRecent } = useRecentHosts();
 const {
   confirmCloseEnabled,
@@ -21,7 +13,7 @@ const {
   cancelClose,
   showConfirmCloseDialog,
 } = useConfirmClose();
-const { openSettings, settingsTabId } = useSettingsTab();
+const { openSettings } = useSettingsTab();
 const { togglePanel: togglePortForwardingPanel } = usePortForwarding();
 const { togglePanel: toggleSftpPanel } = useSftp();
 const { enabled: aiEnabled, commandGeneratorEnabled: aiCommandGeneratorEnabled } = useAiSettings();
@@ -39,9 +31,16 @@ onMounted(() => {
 const activeSessionCount = computed(
   () =>
     sessions.value.filter(
-      (session) =>
-        session.hostId && (session.state === 'connected' || session.state === 'connecting'),
+      (session) => session.state === 'connected' || session.state === 'connecting',
     ).length,
+);
+
+/** Tabs joined with their live session (null for non-session tabs like Settings). */
+const tabSessions = computed(() =>
+  tabs.value.map((tab) => ({
+    tab,
+    session: sessions.value.find((session) => session.tabId === tab.id) ?? null,
+  })),
 );
 
 const sidebarOpen = ref<boolean>();
@@ -59,8 +58,11 @@ const pendingDisconnectHostName = computed(() => {
 
 function requestDisconnectTab(tabId: string) {
   const session = sessions.value.find((session) => session.tabId === tabId);
-  if (!session) return;
-  if (!session.hostId || (session.state !== 'connected' && session.state !== 'connecting')) {
+  if (!session) {
+    closeTab(tabId);
+    return;
+  }
+  if (session.state !== 'connected' && session.state !== 'connecting') {
     disconnect(session.tabId);
     return;
   }
@@ -99,59 +101,59 @@ useEventListener('contextmenu', (e) => {
 defineShortcuts({
   'meta_shift_arrowleft': {
     handler: () => {
-      const list = sessions.value;
+      const list = tabs.value;
       if (list.length < 2) return;
-      const idx = list.findIndex((s) => s.tabId === activeTabId.value);
+      const idx = list.findIndex((tab) => tab.id === activeTabId.value);
       const prev = idx <= 0 ? list[list.length - 1]! : list[idx - 1]!;
-      switchTab(prev.tabId);
+      switchTab(prev.id);
     },
     usingInput: false,
   },
   'meta_shift_arrowright': {
     handler: () => {
-      const list = sessions.value;
+      const list = tabs.value;
       if (list.length < 2) return;
-      const idx = list.findIndex((s) => s.tabId === activeTabId.value);
+      const idx = list.findIndex((tab) => tab.id === activeTabId.value);
       const next = idx >= list.length - 1 ? list[0]! : list[idx + 1]!;
-      switchTab(next.tabId);
+      switchTab(next.id);
     },
     usingInput: false,
   },
   'meta_1': {
-    handler: () => switchTab(sessions.value[0]?.tabId ?? ''),
+    handler: () => switchTab(tabs.value[0]?.id ?? ''),
     usingInput: true,
   },
   'meta_2': {
-    handler: () => switchTab(sessions.value[1]?.tabId ?? ''),
+    handler: () => switchTab(tabs.value[1]?.id ?? ''),
     usingInput: true,
   },
   'meta_3': {
-    handler: () => switchTab(sessions.value[2]?.tabId ?? ''),
+    handler: () => switchTab(tabs.value[2]?.id ?? ''),
     usingInput: true,
   },
   'meta_4': {
-    handler: () => switchTab(sessions.value[3]?.tabId ?? ''),
+    handler: () => switchTab(tabs.value[3]?.id ?? ''),
     usingInput: true,
   },
   'meta_5': {
-    handler: () => switchTab(sessions.value[4]?.tabId ?? ''),
+    handler: () => switchTab(tabs.value[4]?.id ?? ''),
     usingInput: true,
   },
   'meta_6': {
-    handler: () => switchTab(sessions.value[5]?.tabId ?? ''),
+    handler: () => switchTab(tabs.value[5]?.id ?? ''),
     usingInput: true,
   },
   'meta_7': {
-    handler: () => switchTab(sessions.value[6]?.tabId ?? ''),
+    handler: () => switchTab(tabs.value[6]?.id ?? ''),
     usingInput: true,
   },
   'meta_8': {
-    handler: () => switchTab(sessions.value[7]?.tabId ?? ''),
+    handler: () => switchTab(tabs.value[7]?.id ?? ''),
     usingInput: true,
   },
   'meta_9': () => {
-    const list = sessions.value;
-    if (list.length > 0) switchTab(list[list.length - 1]!.tabId);
+    const list = tabs.value;
+    if (list.length > 0) switchTab(list[list.length - 1]!.id);
   },
   'meta_0': {
     handler: () => {
@@ -199,14 +201,14 @@ defineShortcuts({
   'meta_i': {
     handler: () => {
       if (!aiEnabled.value || !aiCommandGeneratorEnabled.value) return;
-      if (!activeSession.value?.hostId || activeSession.value?.state !== 'connected') return;
+      if (activeSession.value?.state !== 'connected') return;
       aiCommandGeneratorOpen.value = true;
     },
     usingInput: true,
   },
   'meta_shift_p': {
     handler: () => {
-      if (!activeSession.value?.hostId || activeSession.value?.state !== 'connected') return;
+      if (activeSession.value?.state !== 'connected') return;
       snippetRunnerOpen.value = true;
     },
     usingInput: true,
@@ -239,7 +241,7 @@ async function reconnect() {
   const tabId = activeTabId.value;
   const hostId = activeSession.value?.hostId;
   if (!tabId || !hostId) return;
-  const index = sessions.value.findIndex((s) => s.tabId === tabId);
+  const index = tabs.value.findIndex((tab) => tab.id === tabId);
   await disconnect(tabId);
   await connect(hostId, index);
 }
@@ -248,54 +250,52 @@ async function reconnect() {
 <template>
   <AppLayout v-model:sidebar-open="sidebarOpen">
     <div class="flex-1 flex flex-col w-full h-full overflow-hidden">
-      <template v-for="session in sessions" :key="session.tabId">
+      <template v-for="{ tab, session } in tabSessions" :key="tab.id">
         <div
-          v-show="session.tabId === activeTabId"
+          v-show="tab.id === activeTabId"
           class="flex-1 flex flex-col w-full h-full overflow-hidden"
         >
-          <SettingsView v-if="session.tabId === settingsTabId" />
+          <SettingsView v-if="tab.kind === 'settings'" />
 
-          <template v-else>
-            <div class="flex-1 flex flex-col w-full h-full overflow-hidden">
-              <div
-                v-if="session.sshSessionId && session.state === 'connected'"
-                class="flex-1 w-full px-4 pb-4"
-              >
-                <Terminal
-                  :session-id="session.sshSessionId"
-                  :on-title-change="(title: string) => setTitle(session.tabId, title)"
-                />
-              </div>
-              <div
-                v-else-if="session.state === 'connecting'"
-                class="flex items-center justify-center h-full text-sm text-muted-foreground pb-14"
-              >
-                Connecting to {{ session.hostName }}…
-              </div>
-              <div
-                v-else-if="session.state === 'error'"
-                class="flex items-center justify-center h-full text-sm text-destructive pb-14"
-              >
-                Error: {{ session.error }}
-              </div>
-              <div
-                v-else-if="session.state === 'disconnected'"
-                class="flex flex-col items-center justify-center h-full gap-3 text-sm text-muted-foreground pb-14"
-              >
-                <span>Connection to {{ session.hostName }} closed.</span>
-                <Button variant="outline" size="sm" @click="reconnect"> Reconnect </Button>
-              </div>
-
-              <div class="flex flex-col gap-3">
-                <SftpPanel class="mx-4 last:mb-4 shrink-0" />
-                <PortForwardingPanel class="mx-4 last:mb-4 shrink-0" />
-              </div>
+          <div v-else class="flex-1 flex flex-col w-full h-full overflow-hidden">
+            <div
+              v-if="session?.sshSessionId && session.state === 'connected'"
+              class="flex-1 w-full px-4 pb-4"
+            >
+              <Terminal
+                :session-id="session.sshSessionId"
+                :on-title-change="(title: string) => setTitle(tab.id, title)"
+              />
             </div>
-          </template>
+            <div
+              v-else-if="session?.state === 'connecting'"
+              class="flex items-center justify-center h-full text-sm text-muted-foreground pb-14"
+            >
+              Connecting to {{ session.hostName }}…
+            </div>
+            <div
+              v-else-if="session?.state === 'error'"
+              class="flex items-center justify-center h-full text-sm text-destructive pb-14"
+            >
+              Error: {{ session.error }}
+            </div>
+            <div
+              v-else-if="session?.state === 'disconnected'"
+              class="flex flex-col items-center justify-center h-full gap-3 text-sm text-muted-foreground pb-14"
+            >
+              <span>Connection to {{ session.hostName }} closed.</span>
+              <Button variant="outline" size="sm" @click="reconnect"> Reconnect </Button>
+            </div>
+
+            <div class="flex flex-col gap-3">
+              <SftpPanel class="mx-4 last:mb-4 shrink-0" />
+              <PortForwardingPanel class="mx-4 last:mb-4 shrink-0" />
+            </div>
+          </div>
         </div>
       </template>
       <div
-        v-if="sessions.length === 0"
+        v-if="tabs.length === 0"
         class="grid place-items-center w-full h-full overflow-y-auto select-none"
       >
         <div class="flex flex-col gap-10 w-full max-w-md mx-auto px-6 pb-14">

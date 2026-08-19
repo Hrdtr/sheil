@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const open = defineModel<boolean>('open');
+
 const { generateCommand } = useAiEngine();
 const { activeSession } = useSessions();
 const { focus: focusTerminal } = useTerminalFocus();

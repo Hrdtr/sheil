@@ -22,9 +22,9 @@ function _useAiEngine() {
   let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
   function resolveFilename(): string | null {
-    const model = models.value.find((m) => m.id === modelId.value);
+    const model = models.value.find((model) => model.id === modelId.value);
     if (!model) return null;
-    const file = model.files.find((f) => f.quant === quant.value);
+    const file = model.files.find((file) => file.quant === quant.value);
     return file?.filename ?? model.files[0]?.filename ?? null;
   }
 
@@ -47,7 +47,11 @@ function _useAiEngine() {
   async function loadModel() {
     const filename = resolveFilename();
     if (!filename) {
-      state.value = { status: 'error', modelDownloadProgress: 0, error: 'No model file found' };
+      state.value = {
+        status: 'error',
+        modelDownloadProgress: 0,
+        error: 'No model file found',
+      };
       return;
     }
 
@@ -56,15 +60,26 @@ function _useAiEngine() {
       if (isLoaded) return;
     }
 
-    state.value = { status: 'loading', modelDownloadProgress: 0, error: null };
-
+    state.value = {
+      status: 'loading',
+      modelDownloadProgress: 0,
+      error: null,
+    };
     try {
       await commands.ai.loadModel(filename);
       loadedFilename = filename;
-      state.value = { status: 'ready', modelDownloadProgress: 100, error: null };
+      state.value = {
+        status: 'ready',
+        modelDownloadProgress: 100,
+        error: null,
+      };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      state.value = { status: 'error', modelDownloadProgress: 0, error: message };
+      state.value = {
+        status: 'error',
+        modelDownloadProgress: 0,
+        error: message,
+      };
       throw err;
     }
   }
@@ -91,7 +106,11 @@ function _useAiEngine() {
       // Best-effort — the model may already be unloaded.
     }
     loadedFilename = null;
-    state.value = { status: 'idle', modelDownloadProgress: 0, error: null };
+    state.value = {
+      status: 'idle',
+      modelDownloadProgress: 0,
+      error: null,
+    };
   }
 
   function scheduleIdleUnload() {
@@ -107,7 +126,11 @@ function _useAiEngine() {
       await commands.ai.unloadModel().catch(() => {});
       loadedFilename = null;
     }
-    state.value = { status: 'idle', modelDownloadProgress: 0, error: null };
+    state.value = {
+      status: 'idle',
+      modelDownloadProgress: 0,
+      error: null,
+    };
 
     if (!enabled.value) return;
     const { allCached } = await checkCacheStatus();
@@ -157,7 +180,7 @@ function _useAiEngine() {
 
     try {
       const downloaded = await commands.ai.listModels();
-      const exists = downloaded.some((m) => m.filename === filename);
+      const exists = downloaded.some((model) => model.filename === filename);
       return { allCached: exists, filename };
     } catch {
       return { allCached: false, filename };
@@ -170,7 +193,11 @@ function _useAiEngine() {
     await commands.ai.deleteModel(filename);
     if (loadedFilename === filename) {
       loadedFilename = null;
-      state.value = { status: 'idle', modelDownloadProgress: 0, error: null };
+      state.value = {
+        status: 'idle',
+        modelDownloadProgress: 0,
+        error: null,
+      };
     }
   }
 
@@ -182,17 +209,29 @@ function _useAiEngine() {
     }
 
     await setupProgressListener();
-    state.value = { status: 'downloading-model', modelDownloadProgress: 0, error: null };
+    state.value = {
+      status: 'downloading-model',
+      modelDownloadProgress: 0,
+      error: null,
+    };
 
     try {
       await commands.ai.downloadModel(repo, filename);
       await commands.ai.loadModel(filename);
       loadedFilename = filename;
-      state.value = { status: 'ready', modelDownloadProgress: 100, error: null };
+      state.value = {
+        status: 'ready',
+        modelDownloadProgress: 100,
+        error: null,
+      };
       scheduleIdleUnload();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      state.value = { status: 'error', modelDownloadProgress: 0, error: message };
+      state.value = {
+        status: 'error',
+        modelDownloadProgress: 0,
+        error: message,
+      };
       throw err;
     }
   }

@@ -35,10 +35,10 @@ function _useAiCompletion(terminal: Ref<Terminal | null>, sessionId: Ref<string 
   }
 
   function readCurrentLine(): string {
-    const t = terminal.value;
-    if (!t) return '';
+    const currentTerminalValue = terminal.value;
+    if (!currentTerminalValue) return '';
 
-    const buffer = t.buffer.active;
+    const buffer = currentTerminalValue.buffer.active;
     if (buffer.type === 'alternate') return '';
 
     const line = buffer.getLine(buffer.cursorY);
@@ -48,10 +48,10 @@ function _useAiCompletion(terminal: Ref<Terminal | null>, sessionId: Ref<string 
   }
 
   function readContextLines(): string {
-    const t = terminal.value;
-    if (!t) return '';
+    const currentTerminalValue = terminal.value;
+    if (!currentTerminalValue) return '';
 
-    const buffer = t.buffer.active;
+    const buffer = currentTerminalValue.buffer.active;
     const max = contextLines.value;
     const lines: string[] = [];
 
@@ -109,9 +109,9 @@ function _useAiCompletion(terminal: Ref<Terminal | null>, sessionId: Ref<string 
     if (!enabled.value || !inlineCompletionEnabled.value) return;
     if (!sessionId.value) return;
 
-    const t = terminal.value;
-    if (!t) return;
-    if (t.buffer.active.type === 'alternate') {
+    const currentTerminalValue = terminal.value;
+    if (!currentTerminalValue) return;
+    if (currentTerminalValue.buffer.active.type === 'alternate') {
       dismissSuggestion();
       return;
     }
@@ -148,15 +148,15 @@ function _useAiCompletion(terminal: Ref<Terminal | null>, sessionId: Ref<string 
 
   watch(
     [() => terminal.value, () => sessionId.value],
-    ([t, sid]) => {
+    ([currentTerminalValue, sid]) => {
       dataDispose?.dispose();
       cursorDispose?.dispose();
 
-      if (t && sid) {
-        dataDispose = t.onData(handleUserInput);
-        cursorDispose = t.onCursorMove(() => {
+      if (currentTerminalValue && sid) {
+        dataDispose = currentTerminalValue.onData(handleUserInput);
+        cursorDispose = currentTerminalValue.onCursorMove(() => {
           if (ghostVisible.value) {
-            const buffer = t.buffer.active;
+            const buffer = currentTerminalValue.buffer.active;
             const line = buffer.getLine(buffer.cursorY);
             const currentText = line?.translateToString(true, 0, buffer.cursorX) ?? '';
             if (currentText !== lastCursorLine) {

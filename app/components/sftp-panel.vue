@@ -56,8 +56,8 @@ watch(
       try {
         await open(sessionId!);
         currentSftpSession = sessionId!;
-      } catch (e) {
-        console.error('SFTP open failed:', e);
+      } catch (err) {
+        console.error('SFTP open failed:', err);
       }
     }
   },
@@ -180,8 +180,8 @@ async function handleUpload() {
     await commands.sftp.upload(sessionId, localPath, remotePath);
     await refresh(sessionId);
     toast.success(`Uploaded ${fileName}`);
-  } catch (e) {
-    toast.error(String(e));
+  } catch (err) {
+    toast.error(String(err));
   }
 }
 
@@ -203,10 +203,10 @@ async function handleDownload(entry: SftpEntry) {
 
 // --- Drag & drop upload ---
 const isDragOver = ref(false);
-let unlistenDrop: UnlistenFn | undefined;
+const unlistenDrop = ref<UnlistenFn | undefined>();
 
 onMounted(async () => {
-  unlistenDrop = await getCurrentWebviewWindow().onDragDropEvent(async (event) => {
+  unlistenDrop.value = await getCurrentWebviewWindow().onDragDropEvent(async (event) => {
     const { type } = event.payload;
 
     // Only handle drops that land on the SFTP panel
@@ -259,7 +259,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  unlistenDrop?.();
+  unlistenDrop.value?.();
 });
 
 function uniqueName(name: string, existing: Set<string>): string {
@@ -308,11 +308,11 @@ function formatPermissions(mode: number): string {
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
   try {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
+    const date = new Date(iso);
+    return date.toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
-      year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
+      year: date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
       hour: '2-digit',
       minute: '2-digit',
     });

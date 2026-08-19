@@ -31,7 +31,7 @@ Licensed under GPLv3. All contributions require DCO sign-off (`git commit -s`).
 ### Key Design Decisions
 
 - **SPA mode**: `ssr: false` in `nuxt.config.ts`. The app runs exclusively inside the Tauri webview.
-- **Every tab is a session**: There is no tab without an SSH session. Closing a tab disconnects the session.
+- **Tabs vs sessions are separate concerns**: `use-tabs.ts` owns tab chrome (ordered `tabs` list with a `kind` of `session` or `settings`, `activeTabId`, open/close/switch/reorder). `use-sessions.ts` owns SSH lifecycle only — sessions are keyed by tab id and exist only for `session` tabs. The settings view is a singleton `settings` tab (`use-settings-tab.ts`); `activeSession` is `null` whenever it is active, so never probe `hostId` or magic tab ids to detect it.
 - **Single shared composable state**: Composables like `useSessions`, `useSettings`, `useHosts` use Nuxt's `useState` and are wrapped with `createSharedComposable` so state is globally shared.
 - **IPC pattern**: Frontend calls Rust via `invoke()` (defined in `app/utils/commands.ts`). Rust emits events to the frontend via `tauri::Emitter`.
 - **Encrypted credentials**: Passwords and SSH keys are reusable, named credentials encrypted with AES-256-GCM using a master key stored on disk. The `credential` table is typed (a `kind` discriminator of `key` | `password`) and id-keyed; hosts reference credentials by `key_id` / `password_id`.
@@ -57,7 +57,9 @@ sheil/
 │   │   ├── ai-command-palette.vue
 │   │   └── ai-ghost-text.vue
 │   ├── composables/               # Reactive state composables
-│   │   ├── use-sessions.ts        # SSH session + tab lifecycle
+│   │   ├── use-tabs.ts            # Tab chrome (order, active tab, kinds)
+│   │   ├── use-sessions.ts        # SSH session lifecycle (keyed by tab id)
+│   │   ├── use-settings-tab.ts    # Settings singleton tab + settingsActive
 │   │   ├── use-hosts.ts           # Host CRUD
 │   │   ├── use-settings.ts        # App settings
 │   │   ├── use-ai-engine.ts       # AI model loading/generation

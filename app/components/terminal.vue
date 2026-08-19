@@ -18,8 +18,7 @@ const props = defineProps<{
 
 const containerRef = useTemplateRef('container');
 
-const { appearance, behavior, colorScheme, copyOnSelect, minimumContrastRatio, scrollSensitivity } =
-  useTerminalSettings();
+const { appearance, behavior, colorScheme, copyOnSelect } = useTerminalSettings();
 const { panelOpen: sftpPanelOpen } = useSftp();
 const { panelOpen: portForwardingPanelOpen } = usePortForwarding();
 const { enabled: aiEnabled, inlineCompletionEnabled: aiInlineEnabled } = useAiSettings();
@@ -78,13 +77,13 @@ try {
 
 const { macOS } = useKbd();
 
-terminal.attachCustomKeyEventHandler((e) => {
-  if (e.type !== 'keydown') return true;
-  if (handleAICompletionKeyboardEvent(e) === false) return false;
+terminal.attachCustomKeyEventHandler((event) => {
+  if (event.type !== 'keydown') return true;
+  if (handleAICompletionKeyboardEvent(event) === false) return false;
 
-  const mod = macOS.value ? e.metaKey && !e.ctrlKey : e.ctrlKey && e.shiftKey;
-  if (mod && e.key.toLowerCase() === 'c') {
-    e.preventDefault();
+  const mod = macOS.value ? event.metaKey && !event.ctrlKey : event.ctrlKey && event.shiftKey;
+  if (mod && event.key.toLowerCase() === 'c') {
+    event.preventDefault();
     const selection = terminal.getSelection();
     if (selection) {
       writeText(selection).catch(() => {});
@@ -93,8 +92,8 @@ terminal.attachCustomKeyEventHandler((e) => {
     }
     return false;
   }
-  if (mod && e.key.toLowerCase() === 'v') {
-    e.preventDefault();
+  if (mod && event.key.toLowerCase() === 'v') {
+    event.preventDefault();
     readText()
       .then((text) => text && terminal.paste(text))
       .catch(() => {});
@@ -106,7 +105,9 @@ terminal.attachCustomKeyEventHandler((e) => {
 terminal.onSelectionChange(() => {
   if (!copyOnSelect.value) return;
   const selection = terminal.getSelection();
-  if (selection) writeText(selection).catch(() => {});
+  if (selection) {
+    writeText(selection).catch(() => {});
+  }
 });
 
 const scrolledUp = ref(false);
@@ -211,8 +212,8 @@ onUnmounted(() => {
 });
 
 // Set up / tear down the SSH PTY channel whenever sessionId changes.
-let unlistenOutput: UnlistenFn | undefined;
-let unlistenExit: UnlistenFn | undefined;
+const unlistenOutput = ref<UnlistenFn | undefined>();
+const unlistenExit = ref<UnlistenFn | undefined>();
 
 watch(
   () => props.sessionId,
@@ -249,22 +250,22 @@ watch(
       if (event.payload.sessionId !== sessionId) return;
       terminal.write(new Uint8Array(event.payload.data));
     }).then((fn) => {
-      unlistenOutput = fn;
+      unlistenOutput.value = fn;
     });
 
     listen<{ sessionId: string }>('ssh-exit', (event) => {
       if (event.payload.sessionId !== sessionId) return;
       terminal.writeln('\r\n\x1b[33m[Connection closed]\x1b[0m');
     }).then((fn) => {
-      unlistenExit = fn;
+      unlistenExit.value = fn;
     });
 
     onCleanup(() => {
       titleDispose.dispose();
       dataDispose.dispose();
       resizeDispose.dispose();
-      unlistenOutput?.();
-      unlistenExit?.();
+      unlistenOutput.value?.();
+      unlistenExit.value?.();
       unregisterTerminal(sessionId);
       commands.ssh.closeChannel(sessionId).catch(() => {});
     });

@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { Terminal } from '@xterm/xterm';
 
+interface CellSize {
+  width: number;
+  height: number;
+}
+
 const props = defineProps<{
   terminal: Terminal;
   suggestion: string;
@@ -12,11 +17,6 @@ const emit = defineEmits<{ accept: [] }>();
 const left = ref(0);
 const top = ref(0);
 const cellHeightPx = ref(0);
-
-interface CellSize {
-  width: number;
-  height: number;
-}
 
 function getCanvas(): Element | null {
   const el = props.terminal.element;
@@ -40,13 +40,18 @@ function measureCellWidth(): number {
   const fontWeight = props.terminal.options.fontWeight ?? 'normal';
   const letterSpacing = props.terminal.options.letterSpacing ?? 0;
 
-  if (typeof document === 'undefined') return fontSize * 0.6;
+  if (typeof document === 'undefined') {
+    return fontSize * 0.6;
+  }
 
   const ctx = document.createElement('canvas').getContext('2d');
-  if (!ctx) return fontSize * 0.6;
+  if (!ctx) {
+    return fontSize * 0.6;
+  }
 
   ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
   const measured = ctx.measureText('0').width + letterSpacing;
+
   return measured > 0 ? measured : fontSize * 0.6;
 }
 
@@ -94,12 +99,9 @@ onUnmounted(() => {
   cursorDispose?.dispose();
 });
 
-watch(
-  () => [props.terminal.options.fontSize, props.visible],
-  () => {
-    if (props.visible) updatePosition();
-  },
-);
+watch([() => props.terminal.options.fontSize, () => props.visible], () => {
+  if (props.visible) updatePosition();
+});
 </script>
 
 <template>

@@ -8,7 +8,6 @@ const emit = defineEmits<{
 }>();
 
 const query = ref('');
-
 const filteredTemplates = computed(() => {
   const q = query.value.trim().toLowerCase();
   if (!q) return snippetTemplates;

@@ -3,6 +3,7 @@ import { DownloadIcon, RefreshCwIcon } from '@lucide/vue';
 import pkg from '../../package.json';
 
 const appVersion = pkg.version;
+
 const { checking, installing, progress, pendingUpdate, checkForUpdates, installUpdate } =
   useUpdater();
 </script>

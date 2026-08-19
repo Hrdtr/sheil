@@ -41,11 +41,11 @@ const quantLabels: Record<string, string> = {
   F16: 'Half precision (F16)',
 };
 
-function quantLabel(q: string) {
-  return quantLabels[q] ?? q;
+function quantLabel(quant: string) {
+  return quantLabels[quant] ?? quant;
 }
 
-const currentModel = computed(() => models.value.find((m) => m.id === modelId.value));
+const currentModel = computed(() => models.value.find((model) => model.id === modelId.value));
 
 async function fetchCacheStatus() {
   metadataLoading.value = true;
@@ -119,8 +119,8 @@ watch(enabled, (value) => {
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem v-for="m in models" :key="m.id" :value="m.id">
-                {{ m.name }}
+              <SelectItem v-for="model in models" :key="model.id" :value="model.id">
+                {{ model.name }}
               </SelectItem>
             </SelectGroup>
           </SelectContent>
@@ -134,8 +134,12 @@ watch(enabled, (value) => {
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem v-for="f in currentModel?.files ?? []" :key="f.quant" :value="f.quant">
-                {{ quantLabel(f.quant) }}
+              <SelectItem
+                v-for="file in currentModel?.files ?? []"
+                :key="file.quant"
+                :value="file.quant"
+              >
+                {{ quantLabel(file.quant) }}
               </SelectItem>
             </SelectGroup>
           </SelectContent>

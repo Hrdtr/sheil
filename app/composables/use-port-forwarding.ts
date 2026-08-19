@@ -56,7 +56,7 @@ function _usePortForwarding() {
 
   const stop = async (forwardId: string): Promise<void> => {
     await commands.portForward.stop(forwardId);
-    forwards.value = forwards.value.filter((f) => f.id !== forwardId);
+    forwards.value = forwards.value.filter((forward) => forward.id !== forwardId);
   };
 
   const refresh = async (sessionId?: string | null): Promise<void> => {

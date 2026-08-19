@@ -16,20 +16,20 @@ import {
 import { platform } from '@tauri-apps/plugin-os';
 import { useSidebar, type SidebarProps } from '@/components/ui/sidebar';
 
+type SidebarView = 'hosts' | 'credentials' | 'snippets';
+
 const props = withDefaults(defineProps<SidebarProps>(), {
   variant: 'inset',
 });
 
 const { groupedHosts } = useHosts();
-const { connect, focusOrConnect, activeTabId } = useSessions();
-const { openSettings, settingsTabId } = useSettingsTab();
+const { connect, focusOrConnect } = useSessions();
+const { openSettings, settingsActive } = useSettingsTab();
 const { setOpenMobile } = useSidebar();
 
 const openQuickConnectDialog = inject<() => void>('openQuickConnectDialog');
 
 const isMacos = platform() === 'macos';
-
-type SidebarView = 'hosts' | 'credentials' | 'snippets';
 const activeView = ref<SidebarView>('hosts');
 
 const credentialsPanelRef = useTemplateRef('credentialsPanel');
@@ -124,9 +124,7 @@ const snippetsPanelRef = useTemplateRef('snippetsPanel');
                   variant="ghost"
                   size="icon"
                   class="rounded-lg"
-                  :class="
-                    activeTabId === settingsTabId ? 'text-foreground' : 'text-muted-foreground'
-                  "
+                  :class="settingsActive ? 'text-foreground' : 'text-muted-foreground'"
                   aria-label="Settings"
                   @click="openSettings"
                 >

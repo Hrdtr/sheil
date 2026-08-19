@@ -12,9 +12,9 @@ const model = defineModel<string | null>({ default: null });
 
 const { hosts, groupedHosts } = useHosts();
 
-const selected = computed(
-  () => (hosts.value ?? []).find((host) => host.id === model.value) ?? null,
-);
+const selected = computed(() => {
+  return (hosts.value ?? []).find((host) => host.id === model.value) ?? null;
+});
 
 function getDisplayValue(id: string | null): string {
   if (!id) return '';

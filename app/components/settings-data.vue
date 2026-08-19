@@ -11,8 +11,8 @@ async function handleClearKnownHosts() {
   try {
     const count = await commands.ssh.clearKnownHosts();
     toast.success(`Cleared ${count} saved host fingerprints.`);
-  } catch (e) {
-    toast.error(`Failed to clear known hosts: ${e}`);
+  } catch (err) {
+    toast.error(`Failed to clear known hosts: ${err}`);
   } finally {
     clearingKnownHosts.value = false;
   }
@@ -56,8 +56,8 @@ async function handleImport(event: Event) {
       toast.error(`Failures: ${result.failed.join(', ')}`);
     }
     refreshHosts();
-  } catch (e) {
-    toast.error(`Import failed: ${e}`);
+  } catch (err) {
+    toast.error(`Import failed: ${err}`);
   } finally {
     importing.value = false;
     input.value = '';
