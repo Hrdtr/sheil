@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.1.9 (2026-08-19)
+
+### Features
+
+- **ai:** browse and download models dynamically from Hugging Face (1e40c82)
+- **ui:** improve snippet template dialog layout (ca19f64)
+
+### Bug Fixes
+
+- **ui:** prevent snippet execution when settings tab is active (382b9cb)
+
+### Refactoring
+
+- **app:** split tab management from SSH session lifecycle (a55395d)
+- **ai:** rename command palette to command generator (0a4ac8c)
+
 ## v0.1.8 (2026-08-18)
 
 ### Features
